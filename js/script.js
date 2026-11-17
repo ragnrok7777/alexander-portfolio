@@ -843,11 +843,13 @@
   }
 
   /* ------------------------------------------------------------------------
-     11. Live Spotify Sync (Connects to Python/Flask Backend)
+     11. Live Spotify Sync (Connects to /api/spotify on Vercel)
      ------------------------------------------------------------------------ */
   function initSpotifyLiveSync() {
-    // Change this URL to your deployed Flask API URL once hosted online
-    const SPOTIFY_API_URL = "http://127.0.0.1:5000/api/spotify";
+    // Automatically uses /api/spotify when hosted on Vercel
+    if (window.location.protocol === "file:") return;
+
+    const SPOTIFY_API_URL = "/api/spotify";
     const POLL_INTERVAL_MS = 30000;
 
     const cardEl = document.getElementById("spotify-card");

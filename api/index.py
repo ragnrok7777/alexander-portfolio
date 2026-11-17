@@ -1,6 +1,9 @@
 """
-Spotify Live Now-Playing & Recently-Played Backend (Flask)
-Connects Alexander's Portfolio to the Spotify Web API securely.
+Spotify Live Now-Playing & Recently-Played API (Flask on Vercel)
+Routes:
+  - /api/spotify  -> Live currently playing or recently played track JSON
+  - /api/login    -> One-time Spotify OAuth login to generate Refresh Token
+  - /api/callback -> Displays your SPOTIFY_REFRESH_TOKEN to paste in Vercel
 """
 
 import base64
@@ -18,7 +21,6 @@ app = Flask(__name__)
 
 CLIENT_ID = os.getenv("SPOTIFY_CLIENT_ID", "").strip()
 CLIENT_SECRET = os.getenv("SPOTIFY_CLIENT_SECRET", "").strip()
-REDIRECT_URI = os.getenv("SPOTIFY_REDIRECT_URI", "http://127.0.0.1:5000/callback").strip()
 REFRESH_TOKEN = os.getenv("SPOTIFY_REFRESH_TOKEN", "").strip()
 
 SPOTIFY_AUTH_URL = "https://accounts.spotify.com/authorize"
@@ -27,8 +29,14 @@ SPOTIFY_NOW_PLAYING_URL = "https://api.spotify.com/v1/me/player/currently-playin
 SPOTIFY_RECENTLY_PLAYED_URL = "https://api.spotify.com/v1/me/player/recently-played?limit=1"
 SCOPES = "user-read-currently-playing user-read-recently-played"
 
-# Simple in-memory cache for the short-lived Spotify access token
 _token_cache = {"access_token": None, "expires_at": 0.0}
+
+
+def _get_redirect_uri() -> str:
+    env_uri = os.getenv("SPOTIFY_REDIRECT_URI", "").strip()
+    if env_uri:
+        return env_uri
+    return f"{request.url_root.rstrip('/')}/api/callback"
 
 
 def _basic_auth_header() -> str:
@@ -43,7 +51,7 @@ def _get_access_token() -> str:
 
     if not (CLIENT_ID and CLIENT_SECRET and REFRESH_TOKEN):
         raise RuntimeError(
-            "Missing SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET, or SPOTIFY_REFRESH_TOKEN in .env"
+            "Missing SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET, or SPOTIFY_REFRESH_TOKEN."
         )
 
     response = requests.post(
@@ -89,28 +97,25 @@ def add_cors_headers(response):
     return response
 
 
-# ---------------------------------------------------------------------------
-# One-Time Setup Helper Routes: /login -> /callback
-# ---------------------------------------------------------------------------
-@app.route("/login")
+@app.route("/api/login")
 def spotify_login():
     if not (CLIENT_ID and CLIENT_SECRET):
         return (
-            "<h3>Set SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET in .env first.</h3>",
+            "<h3>Set SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET in Vercel Environment Variables first.</h3>",
             400,
         )
     params = urlencode(
         {
             "client_id": CLIENT_ID,
             "response_type": "code",
-            "redirect_uri": REDIRECT_URI,
+            "redirect_uri": _get_redirect_uri(),
             "scope": SCOPES,
         }
     )
     return redirect(f"{SPOTIFY_AUTH_URL}?{params}")
 
 
-@app.route("/callback")
+@app.route("/api/callback")
 def spotify_callback():
     code = request.args.get("code")
     if not code:
@@ -125,7 +130,7 @@ def spotify_callback():
         data={
             "grant_type": "authorization_code",
             "code": code,
-            "redirect_uri": REDIRECT_URI,
+            "redirect_uri": _get_redirect_uri(),
         },
         timeout=10,
     )
@@ -136,22 +141,18 @@ def spotify_callback():
     return f"""
     <body style="background:#09090b;color:#f5f5f7;font-family:system-ui;padding:2rem;">
       <h2 style="color:#ebd2aa;">Spotify Connected!</h2>
-      <p>Copy this refresh token into your <code>spotify-backend/.env</code> file as <code>SPOTIFY_REFRESH_TOKEN</code>, then restart <code>app.py</code>:</p>
+      <p>Copy this refresh token into Vercel &rarr; Project Settings &rarr; Environment Variables as <code>SPOTIFY_REFRESH_TOKEN</code>, then Redeploy:</p>
       <pre style="background:#14141a;padding:1rem;border-radius:8px;overflow:auto;border:1px solid #d4af7a;">{refresh_token}</pre>
     </body>
     """
 
 
-# ---------------------------------------------------------------------------
-# Live Portfolio Endpoint: GET /api/spotify
-# ---------------------------------------------------------------------------
 @app.route("/api/spotify")
 def get_spotify_status():
     try:
         token = _get_access_token()
         headers = {"Authorization": f"Bearer {token}"}
 
-        # 1. Check currently playing track first
         now_resp = requests.get(SPOTIFY_NOW_PLAYING_URL, headers=headers, timeout=10)
         if now_resp.status_code == 200:
             data = now_resp.json()
@@ -159,7 +160,6 @@ def get_spotify_status():
             if item and item.get("id"):
                 return jsonify(_format_track(item, bool(data.get("is_playing"))))
 
-        # 2. Fallback to most recently played track
         recent_resp = requests.get(
             SPOTIFY_RECENTLY_PLAYED_URL, headers=headers, timeout=10
         )
@@ -171,7 +171,3 @@ def get_spotify_status():
         return jsonify({"isPlaying": False, "trackId": None}), 200
     except Exception as exc:
         return jsonify({"error": str(exc)}), 500
-
-
-if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=5000, debug=True)
