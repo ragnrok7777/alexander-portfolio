@@ -98,6 +98,7 @@ def add_cors_headers(response):
 
 
 @app.route("/api/login")
+@app.route("/login")
 def spotify_login():
     if not (CLIENT_ID and CLIENT_SECRET):
         return (
@@ -116,6 +117,7 @@ def spotify_login():
 
 
 @app.route("/api/callback")
+@app.route("/callback")
 def spotify_callback():
     code = request.args.get("code")
     if not code:
@@ -148,6 +150,7 @@ def spotify_callback():
 
 
 @app.route("/api/spotify")
+@app.route("/spotify")
 def get_spotify_status():
     try:
         token = _get_access_token()
