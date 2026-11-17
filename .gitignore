@@ -1,0 +1,13 @@
+# Secrets & Environment Variables
+.env
+spotify-backend/.env
+
+# Python / Flask
+__pycache__/
+*.pyc
+venv/
+.venv/
+
+# OS / Editor
+.DS_Store
+Thumbs.db
