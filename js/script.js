@@ -438,17 +438,28 @@
       ctx.clearRect(0, 0, width, height);
       time += 1;
 
+      const isLight = document.documentElement.getAttribute("data-theme") === "light";
+
       // Spawn shooting star at medium rate
       if (Math.random() < 0.006) spawnShooter();
 
       // Draw stars with medium-speed twinkle
       stars.forEach((s) => {
-        const opacity = s.base + Math.sin(time * s.twinkleSpeed + s.twinkleOffset) * 0.25;
+        const opacity = Math.max(
+          0.08,
+          Math.min(1, s.base + Math.sin(time * s.twinkleSpeed + s.twinkleOffset) * 0.25)
+        );
         ctx.beginPath();
         ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-        ctx.fillStyle = s.gold
-          ? `rgba(235, 210, 160, ${opacity.toFixed(3)})`
-          : `rgba(220, 220, 240, ${opacity.toFixed(3)})`;
+        if (isLight) {
+          ctx.fillStyle = s.gold
+            ? `rgba(154, 116, 57, ${(opacity * 0.65).toFixed(3)})`
+            : `rgba(110, 102, 92, ${(opacity * 0.42).toFixed(3)})`;
+        } else {
+          ctx.fillStyle = s.gold
+            ? `rgba(235, 210, 160, ${opacity.toFixed(3)})`
+            : `rgba(220, 220, 240, ${opacity.toFixed(3)})`;
+        }
         ctx.fill();
       });
 
@@ -458,16 +469,24 @@
         const tailX = sh.x - sh.len;
         const tailY = sh.y - sh.len * (sh.vy / sh.vx);
         const grad = ctx.createLinearGradient(tailX, tailY, sh.x, sh.y);
-        grad.addColorStop(0,   `rgba(235, 210, 160, 0)`);
-        grad.addColorStop(0.6, `rgba(235, 210, 160, ${(sh.life * 0.5).toFixed(3)})`);
-        grad.addColorStop(1,   `rgba(255, 245, 220, ${sh.life.toFixed(3)})`);
+        if (isLight) {
+          grad.addColorStop(0,   `rgba(154, 116, 57, 0)`);
+          grad.addColorStop(0.6, `rgba(154, 116, 57, ${(sh.life * 0.45).toFixed(3)})`);
+          grad.addColorStop(1,   `rgba(125, 91, 37, ${(sh.life * 0.85).toFixed(3)})`);
+        } else {
+          grad.addColorStop(0,   `rgba(235, 210, 160, 0)`);
+          grad.addColorStop(0.6, `rgba(235, 210, 160, ${(sh.life * 0.5).toFixed(3)})`);
+          grad.addColorStop(1,   `rgba(255, 245, 220, ${sh.life.toFixed(3)})`);
+        }
 
         ctx.beginPath();
         ctx.moveTo(tailX, tailY);
         ctx.lineTo(sh.x, sh.y);
         ctx.strokeStyle = grad;
         ctx.lineWidth = 1.5 * sh.life;
-        ctx.shadowColor = `rgba(235, 210, 160, ${sh.life * 0.6})`;
+        ctx.shadowColor = isLight
+          ? `rgba(154, 116, 57, ${sh.life * 0.4})`
+          : `rgba(235, 210, 160, ${sh.life * 0.6})`;
         ctx.shadowBlur = 6;
         ctx.stroke();
         ctx.shadowBlur = 0;
@@ -868,7 +887,48 @@
   }
 
   /* ------------------------------------------------------------------------
-     12. Dynamic Copyright Year
+     12. Dark / Light Mode Toggle (Persists in localStorage)
+     ------------------------------------------------------------------------ */
+  function initThemeToggle() {
+    const toggleBtn = document.getElementById("theme-toggle");
+    if (!toggleBtn) return;
+
+    const root = document.documentElement;
+    const STORAGE_KEY = "portfolio-theme";
+
+    const applyTheme = (theme, announce) => {
+      const isLight = theme === "light";
+      root.setAttribute("data-theme", isLight ? "light" : "dark");
+      toggleBtn.setAttribute("aria-pressed", String(isLight));
+      toggleBtn.setAttribute(
+        "aria-label",
+        isLight ? "Switch to dark mode" : "Switch to light mode"
+      );
+      toggleBtn.setAttribute(
+        "title",
+        isLight ? "Switch to Dark Mode" : "Switch to Light Mode"
+      );
+      try {
+        localStorage.setItem(STORAGE_KEY, isLight ? "light" : "dark");
+      } catch {
+        // Ignore storage errors in restricted browsing contexts
+      }
+      if (announce) {
+        showToast(isLight ? "Light mode enabled." : "Dark mode enabled.");
+      }
+    };
+
+    const initialTheme = root.getAttribute("data-theme") === "light" ? "light" : "dark";
+    applyTheme(initialTheme, false);
+
+    toggleBtn.addEventListener("click", () => {
+      const current = root.getAttribute("data-theme") === "light" ? "light" : "dark";
+      applyTheme(current === "light" ? "dark" : "light", true);
+    });
+  }
+
+  /* ------------------------------------------------------------------------
+     13. Dynamic Copyright Year
      ------------------------------------------------------------------------ */
   function initFooterYear() {
     const yearEl = document.getElementById("current-year");
@@ -881,6 +941,7 @@
      Initialize All Modules
      ------------------------------------------------------------------------ */
   document.addEventListener("DOMContentLoaded", () => {
+    initThemeToggle();
     initScrollChrome();
     initMobileNav();
     initNavigationSpy();
