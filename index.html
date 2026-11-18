@@ -17,6 +17,8 @@
 <body>
   <!-- Accessibility Skip Link -->
   <a class="skip-link" href="#main-content">Skip to main content</a>
+  <!-- Full-page starfield canvas -->
+  <canvas id="hero-canvas" class="hero-canvas" aria-hidden="true"></canvas>
 
   <!-- =====================================================================
        NAVIGATION BAR
@@ -81,7 +83,7 @@
     <section class="hero section" id="hero" aria-labelledby="hero-heading">
       <!-- Animated Background Layers -->
       <div class="hero-bg" aria-hidden="true">
-        <canvas id="hero-canvas" class="hero-canvas"></canvas>
+        <canvas id="hero-canvas" class="hero-canvas-old-ref" style="display:none"></canvas>
         <div class="hero-orb hero-orb-primary"></div>
         <div class="hero-orb hero-orb-secondary"></div>
         <div class="hero-grid-overlay"></div>

@@ -391,85 +391,95 @@
     let width = 0;
     let height = 0;
     let animationFrameId = null;
-    let isHeroVisible = true;
     let time = 0;
+    let stars = [];
+    let shooters = [];
 
-    // Aurora wave bands
-    const waves = [
-      { color: [212, 175, 122], yFactor: 0.38, speed: 0.00018, amp: 0.13, freq: 1.7, offset: 0.0 },
-      { color: [160, 110, 200], yFactor: 0.50, speed: 0.00013, amp: 0.10, freq: 2.1, offset: 2.1 },
-      { color: [100, 180, 220], yFactor: 0.44, speed: 0.00022, amp: 0.09, freq: 1.4, offset: 4.3 },
-      { color: [235, 210, 170], yFactor: 0.56, speed: 0.00016, amp: 0.08, freq: 2.5, offset: 1.1 },
-      { color: [130, 90,  180], yFactor: 0.33, speed: 0.00011, amp: 0.11, freq: 1.9, offset: 3.5 },
-    ];
+    const STAR_COUNT = 160;
+
+    const createStars = () => {
+      stars = Array.from({ length: STAR_COUNT }, () => ({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        r: Math.random() * 1.3 + 0.2,
+        base: Math.random() * 0.7 + 0.15,          // base opacity
+        twinkleSpeed: Math.random() * 0.025 + 0.008,
+        twinkleOffset: Math.random() * Math.PI * 2,
+        gold: Math.random() > 0.72,
+      }));
+    };
+
+    const spawnShooter = () => {
+      const startX = Math.random() * width * 0.7 + width * 0.1;
+      const startY = Math.random() * height * 0.45;
+      const angle = Math.PI / 5 + Math.random() * Math.PI / 8; // ~36-58° downward
+      const speed = 6 + Math.random() * 5;
+      shooters.push({
+        x: startX, y: startY,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        len: 90 + Math.random() * 80,
+        life: 1.0,
+        decay: 0.022 + Math.random() * 0.012,
+      });
+    };
 
     const resize = () => {
-      const rect = canvas.parentElement.getBoundingClientRect();
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      width = rect.width;
-      height = rect.height;
+      width = window.innerWidth;
+      height = window.innerHeight;
       canvas.width = Math.floor(width * dpr);
       canvas.height = Math.floor(height * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      createStars();
     };
 
     const drawFrame = () => {
       ctx.clearRect(0, 0, width, height);
       time += 1;
 
-      waves.forEach((wave) => {
-        const baseY = height * wave.yFactor;
-        const amplitude = height * wave.amp;
-        const phase = time * wave.speed * Math.PI * 2000 + wave.offset;
-        const [r, g, b] = wave.color;
+      // Spawn shooting star at medium rate
+      if (Math.random() < 0.006) spawnShooter();
 
-        ctx.save();
+      // Draw stars with medium-speed twinkle
+      stars.forEach((s) => {
+        const opacity = s.base + Math.sin(time * s.twinkleSpeed + s.twinkleOffset) * 0.25;
         ctx.beginPath();
-        ctx.moveTo(0, height);
-
-        for (let x = 0; x <= width; x += 4) {
-          const nx = x / width;
-          const y =
-            baseY +
-            Math.sin(nx * wave.freq * Math.PI * 2 + phase) * amplitude +
-            Math.sin(nx * wave.freq * 0.5 * Math.PI * 2 + phase * 0.7) * amplitude * 0.4;
-          ctx.lineTo(x, y);
-        }
-
-        ctx.lineTo(width, height);
-        ctx.closePath();
-
-        const grad = ctx.createLinearGradient(0, baseY - amplitude, 0, baseY + amplitude * 2);
-        grad.addColorStop(0,   `rgba(${r},${g},${b},0.18)`);
-        grad.addColorStop(0.4, `rgba(${r},${g},${b},0.09)`);
-        grad.addColorStop(1,   `rgba(${r},${g},${b},0.00)`);
-
-        ctx.fillStyle = grad;
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fillStyle = s.gold
+          ? `rgba(235, 210, 160, ${opacity.toFixed(3)})`
+          : `rgba(220, 220, 240, ${opacity.toFixed(3)})`;
         ctx.fill();
-        ctx.restore();
+      });
 
-        // Glowing crest line
-        ctx.save();
+      // Draw shooting stars
+      shooters = shooters.filter((sh) => sh.life > 0);
+      shooters.forEach((sh) => {
+        const tailX = sh.x - sh.len;
+        const tailY = sh.y - sh.len * (sh.vy / sh.vx);
+        const grad = ctx.createLinearGradient(tailX, tailY, sh.x, sh.y);
+        grad.addColorStop(0,   `rgba(235, 210, 160, 0)`);
+        grad.addColorStop(0.6, `rgba(235, 210, 160, ${(sh.life * 0.5).toFixed(3)})`);
+        grad.addColorStop(1,   `rgba(255, 245, 220, ${sh.life.toFixed(3)})`);
+
         ctx.beginPath();
-        for (let x = 0; x <= width; x += 4) {
-          const nx = x / width;
-          const y =
-            baseY +
-            Math.sin(nx * wave.freq * Math.PI * 2 + phase) * amplitude +
-            Math.sin(nx * wave.freq * 0.5 * Math.PI * 2 + phase * 0.7) * amplitude * 0.4;
-          x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-        }
-        ctx.strokeStyle = `rgba(${r},${g},${b},0.28)`;
-        ctx.lineWidth = 1.2;
-        ctx.shadowColor = `rgba(${r},${g},${b},0.5)`;
-        ctx.shadowBlur = 10;
+        ctx.moveTo(tailX, tailY);
+        ctx.lineTo(sh.x, sh.y);
+        ctx.strokeStyle = grad;
+        ctx.lineWidth = 1.5 * sh.life;
+        ctx.shadowColor = `rgba(235, 210, 160, ${sh.life * 0.6})`;
+        ctx.shadowBlur = 6;
         ctx.stroke();
-        ctx.restore();
+        ctx.shadowBlur = 0;
+
+        sh.x += sh.vx;
+        sh.y += sh.vy;
+        sh.life -= sh.decay;
       });
     };
 
     const loop = () => {
-      if (!isHeroVisible || document.hidden || prefersReducedMotion.matches) {
+      if (document.hidden || prefersReducedMotion.matches) {
         animationFrameId = null;
         return;
       }
@@ -478,29 +488,11 @@
     };
 
     const startLoop = () => {
-      if (prefersReducedMotion.matches) {
-        drawFrame();
-        return;
-      }
-      if (!animationFrameId && isHeroVisible && !document.hidden) {
+      if (prefersReducedMotion.matches) { drawFrame(); return; }
+      if (!animationFrameId && !document.hidden) {
         animationFrameId = window.requestAnimationFrame(loop);
       }
     };
-
-    const heroSection = document.getElementById("hero");
-    if (heroSection) {
-
-      if ("IntersectionObserver" in window) {
-        const heroObserver = new IntersectionObserver(
-          (entries) => {
-            isHeroVisible = entries[0].isIntersecting;
-            if (isHeroVisible) startLoop();
-          },
-          { threshold: 0.05 }
-        );
-        heroObserver.observe(heroSection);
-      }
-    }
 
     document.addEventListener("visibilitychange", () => {
       if (!document.hidden) startLoop();
