@@ -443,36 +443,41 @@
       // Spawn shooting star at medium rate
       if (Math.random() < 0.006) spawnShooter();
 
-      // Draw stars with medium-speed twinkle
+      // Draw stars / sunlit motes with medium-speed twinkle
       stars.forEach((s) => {
         const opacity = Math.max(
-          0.08,
+          0.14,
           Math.min(1, s.base + Math.sin(time * s.twinkleSpeed + s.twinkleOffset) * 0.25)
         );
+        const radius = isLight ? s.r * 1.45 + 0.35 : s.r;
         ctx.beginPath();
-        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.arc(s.x, s.y, radius, 0, Math.PI * 2);
         if (isLight) {
           ctx.fillStyle = s.gold
-            ? `rgba(154, 116, 57, ${(opacity * 0.65).toFixed(3)})`
-            : `rgba(110, 102, 92, ${(opacity * 0.42).toFixed(3)})`;
+            ? `rgba(217, 119, 6, ${(opacity * 0.82).toFixed(3)})`
+            : `rgba(180, 118, 42, ${(opacity * 0.52).toFixed(3)})`;
+          ctx.shadowColor = `rgba(245, 158, 11, ${(opacity * 0.45).toFixed(3)})`;
+          ctx.shadowBlur = s.gold ? 6 : 2;
         } else {
           ctx.fillStyle = s.gold
             ? `rgba(235, 210, 160, ${opacity.toFixed(3)})`
             : `rgba(220, 220, 240, ${opacity.toFixed(3)})`;
+          ctx.shadowBlur = 0;
         }
         ctx.fill();
       });
+      ctx.shadowBlur = 0;
 
-      // Draw shooting stars
+      // Draw shooting stars / golden sun streaks
       shooters = shooters.filter((sh) => sh.life > 0);
       shooters.forEach((sh) => {
         const tailX = sh.x - sh.len;
         const tailY = sh.y - sh.len * (sh.vy / sh.vx);
         const grad = ctx.createLinearGradient(tailX, tailY, sh.x, sh.y);
         if (isLight) {
-          grad.addColorStop(0,   `rgba(154, 116, 57, 0)`);
-          grad.addColorStop(0.6, `rgba(154, 116, 57, ${(sh.life * 0.45).toFixed(3)})`);
-          grad.addColorStop(1,   `rgba(125, 91, 37, ${(sh.life * 0.85).toFixed(3)})`);
+          grad.addColorStop(0,   `rgba(245, 158, 11, 0)`);
+          grad.addColorStop(0.55, `rgba(217, 119, 6, ${(sh.life * 0.65).toFixed(3)})`);
+          grad.addColorStop(1,   `rgba(180, 83, 9, ${(sh.life * 0.95).toFixed(3)})`);
         } else {
           grad.addColorStop(0,   `rgba(235, 210, 160, 0)`);
           grad.addColorStop(0.6, `rgba(235, 210, 160, ${(sh.life * 0.5).toFixed(3)})`);
@@ -483,11 +488,11 @@
         ctx.moveTo(tailX, tailY);
         ctx.lineTo(sh.x, sh.y);
         ctx.strokeStyle = grad;
-        ctx.lineWidth = 1.5 * sh.life;
+        ctx.lineWidth = (isLight ? 2.2 : 1.5) * sh.life;
         ctx.shadowColor = isLight
-          ? `rgba(154, 116, 57, ${sh.life * 0.4})`
+          ? `rgba(245, 158, 11, ${sh.life * 0.65})`
           : `rgba(235, 210, 160, ${sh.life * 0.6})`;
-        ctx.shadowBlur = 6;
+        ctx.shadowBlur = isLight ? 8 : 6;
         ctx.stroke();
         ctx.shadowBlur = 0;
 
@@ -515,6 +520,10 @@
 
     document.addEventListener("visibilitychange", () => {
       if (!document.hidden) startLoop();
+    });
+
+    window.addEventListener("themechange", () => {
+      drawFrame();
     });
 
     window.addEventListener("resize", resize);
@@ -902,19 +911,20 @@
       toggleBtn.setAttribute("aria-pressed", String(isLight));
       toggleBtn.setAttribute(
         "aria-label",
-        isLight ? "Switch to dark mode" : "Switch to light mode"
+        isLight ? "Switch to moon (dark) mode" : "Switch to sun (light) mode"
       );
       toggleBtn.setAttribute(
         "title",
-        isLight ? "Switch to Dark Mode" : "Switch to Light Mode"
+        isLight ? "Switch to Moon (Dark) Mode" : "Switch to Sun (Light) Mode"
       );
+      window.dispatchEvent(new CustomEvent("themechange", { detail: { theme: isLight ? "light" : "dark" } }));
       try {
         localStorage.setItem(STORAGE_KEY, isLight ? "light" : "dark");
       } catch {
         // Ignore storage errors in restricted browsing contexts
       }
       if (announce) {
-        showToast(isLight ? "Light mode enabled." : "Dark mode enabled.");
+        showToast(isLight ? "Sun mode enabled." : "Moon mode enabled.");
       }
     };
 
