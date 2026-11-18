@@ -431,39 +431,6 @@
         if (p.y < 0) p.y = height;
         if (p.y > height) p.y = 0;
 
-        // Draw subtle filament lines between nearby particles
-        for (let j = i + 1; j < particles.length; j += 1) {
-          const q = particles[j];
-          const dx = p.x - q.x;
-          const dy = p.y - q.y;
-          const dist = Math.hypot(dx, dy);
-
-          if (dist < 135) {
-            const alpha = (1 - dist / 135) * 0.14;
-            ctx.strokeStyle = `rgba(212, 175, 122, ${alpha.toFixed(3)})`;
-            ctx.lineWidth = 0.7;
-            ctx.beginPath();
-            ctx.moveTo(p.x, p.y);
-            ctx.lineTo(q.x, q.y);
-            ctx.stroke();
-          }
-        }
-
-        // Gentle pointer attraction halo
-        if (pointer.x !== null && pointer.y !== null) {
-          const pdx = p.x - pointer.x;
-          const pdy = p.y - pointer.y;
-          const pdist = Math.hypot(pdx, pdy);
-          if (pdist < 150) {
-            const alpha = (1 - pdist / 150) * 0.22;
-            ctx.strokeStyle = `rgba(235, 210, 170, ${alpha.toFixed(3)})`;
-            ctx.lineWidth = 0.8;
-            ctx.beginPath();
-            ctx.moveTo(p.x, p.y);
-            ctx.lineTo(pointer.x, pointer.y);
-            ctx.stroke();
-          }
-        }
 
         ctx.fillStyle = p.gold
           ? "rgba(235, 210, 170, 0.55)"
