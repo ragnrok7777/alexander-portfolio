@@ -390,22 +390,18 @@
 
     let width = 0;
     let height = 0;
-    let particles = [];
     let animationFrameId = null;
     let isHeroVisible = true;
-    const pointer = { x: null, y: null };
+    let time = 0;
 
-    const createParticles = () => {
-      const count = Math.min(48, Math.max(20, Math.floor((width * height) / 26000)));
-      particles = Array.from({ length: count }, () => ({
-        x: Math.random() * width,
-        y: Math.random() * height,
-        vx: (Math.random() - 0.5) * 0.28,
-        vy: (Math.random() - 0.5) * 0.28,
-        radius: Math.random() * 1.4 + 0.6,
-        gold: Math.random() > 0.55,
-      }));
-    };
+    // Aurora wave bands
+    const waves = [
+      { color: [212, 175, 122], yFactor: 0.38, speed: 0.00018, amp: 0.13, freq: 1.7, offset: 0.0 },
+      { color: [160, 110, 200], yFactor: 0.50, speed: 0.00013, amp: 0.10, freq: 2.1, offset: 2.1 },
+      { color: [100, 180, 220], yFactor: 0.44, speed: 0.00022, amp: 0.09, freq: 1.4, offset: 4.3 },
+      { color: [235, 210, 170], yFactor: 0.56, speed: 0.00016, amp: 0.08, freq: 2.5, offset: 1.1 },
+      { color: [130, 90,  180], yFactor: 0.33, speed: 0.00011, amp: 0.11, freq: 1.9, offset: 3.5 },
+    ];
 
     const resize = () => {
       const rect = canvas.parentElement.getBoundingClientRect();
@@ -415,30 +411,61 @@
       canvas.width = Math.floor(width * dpr);
       canvas.height = Math.floor(height * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      createParticles();
     };
 
     const drawFrame = () => {
       ctx.clearRect(0, 0, width, height);
+      time += 1;
 
-      for (let i = 0; i < particles.length; i += 1) {
-        const p = particles[i];
-        p.x += p.vx;
-        p.y += p.vy;
+      waves.forEach((wave) => {
+        const baseY = height * wave.yFactor;
+        const amplitude = height * wave.amp;
+        const phase = time * wave.speed * Math.PI * 2000 + wave.offset;
+        const [r, g, b] = wave.color;
 
-        if (p.x < 0) p.x = width;
-        if (p.x > width) p.x = 0;
-        if (p.y < 0) p.y = height;
-        if (p.y > height) p.y = 0;
-
-
-        ctx.fillStyle = p.gold
-          ? "rgba(235, 210, 170, 0.55)"
-          : "rgba(245, 245, 247, 0.32)";
+        ctx.save();
         ctx.beginPath();
-        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.moveTo(0, height);
+
+        for (let x = 0; x <= width; x += 4) {
+          const nx = x / width;
+          const y =
+            baseY +
+            Math.sin(nx * wave.freq * Math.PI * 2 + phase) * amplitude +
+            Math.sin(nx * wave.freq * 0.5 * Math.PI * 2 + phase * 0.7) * amplitude * 0.4;
+          ctx.lineTo(x, y);
+        }
+
+        ctx.lineTo(width, height);
+        ctx.closePath();
+
+        const grad = ctx.createLinearGradient(0, baseY - amplitude, 0, baseY + amplitude * 2);
+        grad.addColorStop(0,   `rgba(${r},${g},${b},0.18)`);
+        grad.addColorStop(0.4, `rgba(${r},${g},${b},0.09)`);
+        grad.addColorStop(1,   `rgba(${r},${g},${b},0.00)`);
+
+        ctx.fillStyle = grad;
         ctx.fill();
-      }
+        ctx.restore();
+
+        // Glowing crest line
+        ctx.save();
+        ctx.beginPath();
+        for (let x = 0; x <= width; x += 4) {
+          const nx = x / width;
+          const y =
+            baseY +
+            Math.sin(nx * wave.freq * Math.PI * 2 + phase) * amplitude +
+            Math.sin(nx * wave.freq * 0.5 * Math.PI * 2 + phase * 0.7) * amplitude * 0.4;
+          x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = `rgba(${r},${g},${b},0.28)`;
+        ctx.lineWidth = 1.2;
+        ctx.shadowColor = `rgba(${r},${g},${b},0.5)`;
+        ctx.shadowBlur = 10;
+        ctx.stroke();
+        ctx.restore();
+      });
     };
 
     const loop = () => {
@@ -462,15 +489,6 @@
 
     const heroSection = document.getElementById("hero");
     if (heroSection) {
-      heroSection.addEventListener("mousemove", (event) => {
-        const rect = heroSection.getBoundingClientRect();
-        pointer.x = event.clientX - rect.left;
-        pointer.y = event.clientY - rect.top;
-      });
-      heroSection.addEventListener("mouseleave", () => {
-        pointer.x = null;
-        pointer.y = null;
-      });
 
       if ("IntersectionObserver" in window) {
         const heroObserver = new IntersectionObserver(
