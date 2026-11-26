@@ -182,22 +182,22 @@ body.crt-enabled .crt-overlay {
 
 .section-sub {
   font-family: var(--font-pixel);
-  font-size: 0.65rem;
-  letter-spacing: 0.14em;
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
   color: var(--gta-cyan);
-  text-shadow: 0 0 8px var(--gta-cyan-glow);
+  text-shadow: 0 0 10px var(--gta-cyan-glow);
   display: block;
   margin-bottom: 8px;
 }
 
 .section-heading {
   font-family: var(--font-pixel);
-  font-size: clamp(1rem, 3.2vw, 1.45rem);
+  font-size: clamp(1.05rem, 3.2vw, 1.55rem);
   letter-spacing: -0.02em;
-  background: linear-gradient(180deg, #ff2a8d 15%, #ff7300 55%, #ffd000 100%);
+  background: linear-gradient(180deg, #ff177d 0%, #ff5233 40%, #ff8c00 70%, #ffd000 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  filter: drop-shadow(2px 2px 0px rgba(0, 0, 0, 0.9));
+  filter: drop-shadow(0 0 10px rgba(255, 42, 141, 0.5)) drop-shadow(2px 2px 0px rgba(0, 0, 0, 0.95));
 }
 
 /* Authentic Pixel Card Frame (GTA VI Vice Neon Borders) */
@@ -229,7 +229,7 @@ body.crt-enabled .crt-overlay {
   background-color: var(--rpg-bg-alt);
   border-bottom: 2px solid var(--pixel-border-color);
   font-family: var(--font-pixel);
-  font-size: 0.62rem;
+  font-size: 0.64rem;
   letter-spacing: 0.08em;
   color: var(--gta-pink);
   text-shadow: 0 0 8px var(--gta-pink-glow);
@@ -237,6 +237,15 @@ body.crt-enabled .crt-overlay {
 
 .box-title {
   text-transform: uppercase;
+  color: var(--gta-pink);
+  text-shadow: 0 0 8px var(--gta-pink-glow);
+}
+
+.status-indicator {
+  font-family: var(--font-pixel);
+  font-size: 0.62rem;
+  color: var(--gta-cyan);
+  text-shadow: 0 0 8px var(--gta-cyan-glow);
 }
 
 .pixel-box-content {
@@ -288,20 +297,42 @@ body.crt-enabled .crt-overlay {
 }
 
 .pixel-btn-primary {
-  background: linear-gradient(135deg, #ff2a8d 0%, #ff6a00 55%, #ffd000 100%);
+  background: linear-gradient(135deg, #ff177d 0%, #ff5e00 50%, #ffd000 100%);
   color: #0c0414;
   border-color: #ffd000;
   box-shadow:
     inset -2px -2px 0px 0px #9e004a,
     inset 2px 2px 0px 0px #ffe599,
-    0 4px 16px rgba(255, 42, 141, 0.45);
+    0 4px 18px rgba(255, 42, 141, 0.65);
   font-weight: bold;
 }
 
 .pixel-btn-primary:hover {
-  background: linear-gradient(135deg, #ff4fa2 0%, #ff852e 55%, #ffe04d 100%);
+  background: linear-gradient(135deg, #ff3b99 0%, #ff7824 50%, #ffe04d 100%);
   color: #0c0414;
-  box-shadow: 0 4px 22px rgba(255, 42, 141, 0.65);
+  box-shadow: 0 4px 24px rgba(255, 42, 141, 0.85);
+}
+
+.pixel-btn-secondary {
+  background-color: rgba(24, 11, 45, 0.85);
+  border-color: var(--gta-cyan);
+  color: var(--gta-cyan);
+  text-shadow: 0 0 8px var(--gta-cyan-glow);
+  box-shadow:
+    inset -2px -2px 0px 0px rgba(0, 0, 0, 0.6),
+    inset 2px 2px 0px 0px rgba(0, 240, 255, 0.25),
+    0 4px 0px 0px rgba(0, 0, 0, 0.5);
+}
+
+.pixel-btn-secondary:hover {
+  background-color: rgba(255, 42, 141, 0.2);
+  border-color: var(--gta-pink);
+  color: #ffffff;
+  text-shadow: 0 0 10px var(--gta-pink-glow);
+  box-shadow:
+    inset -2px -2px 0px 0px rgba(0, 0, 0, 0.6),
+    inset 2px 2px 0px 0px rgba(255, 42, 141, 0.35),
+    0 4px 16px var(--gta-pink-glow);
 }
 
 .pixel-btn-sm {
@@ -406,17 +437,20 @@ body.crt-enabled .crt-overlay {
 
 .hud-player-name {
   font-family: var(--font-pixel);
-  font-size: 0.76rem;
-  background: linear-gradient(180deg, #ff2a8d 10%, #ff7300 55%, #ffd000 100%);
+  font-size: 0.8rem;
+  background: linear-gradient(180deg, #ff177d 0%, #ff5233 45%, #ff9e00 80%, #ffd000 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  filter: drop-shadow(1px 1px 0px rgba(0, 0, 0, 0.9));
+  filter: drop-shadow(0 0 8px rgba(255, 42, 141, 0.6)) drop-shadow(1px 1px 0px rgba(0, 0, 0, 0.9));
+  letter-spacing: 0.05em;
 }
 
 .hud-player-class {
   font-family: var(--font-screen);
   font-size: 0.65rem;
-  color: var(--text-muted);
+  color: var(--gta-cyan);
+  text-shadow: 0 0 6px var(--gta-cyan-glow);
+  letter-spacing: 0.06em;
 }
 
 .hud-nav {
@@ -433,22 +467,30 @@ body.crt-enabled .crt-overlay {
 .hud-link {
   font-family: var(--font-pixel);
   font-size: 0.62rem;
-  color: var(--text-muted);
+  color: #fff0f7;
   text-decoration: none;
-  padding: 6px 8px;
+  padding: 6px 10px;
   border: 1px solid transparent;
-  transition: color 0.12s, border-color 0.12s, background-color 0.12s;
+  transition: color 0.12s, border-color 0.12s, background-color 0.12s, text-shadow 0.12s;
+  letter-spacing: 0.04em;
 }
 
 .hud-link:hover {
-  color: var(--rpg-gold);
-  border-color: var(--rpg-gold);
-  background-color: var(--rpg-gold-dim);
+  color: var(--gta-cyan);
+  border-color: var(--gta-pink);
+  background-color: var(--gta-pink-glow);
+  text-shadow: 0 0 8px var(--gta-cyan-glow);
 }
 
 .link-key {
-  color: var(--rpg-gold);
-  margin-right: 2px;
+  color: var(--gta-cyan);
+  text-shadow: 0 0 6px var(--gta-cyan-glow);
+  margin-right: 4px;
+}
+
+.hud-link:hover .link-key {
+  color: var(--gta-pink);
+  text-shadow: 0 0 8px var(--gta-pink-glow);
 }
 
 .hud-controls {
@@ -478,7 +520,7 @@ body.crt-enabled .crt-overlay {
   opacity: 0;
   visibility: hidden;
   transition: transform 0.2s ease, opacity 0.2s ease, visibility 0.2s;
-  border-bottom: 4px solid var(--rpg-gold);
+  border-bottom: 4px solid var(--gta-pink);
 }
 
 .mobile-hud.is-open {
@@ -490,7 +532,8 @@ body.crt-enabled .crt-overlay {
 .mobile-hud-banner {
   font-family: var(--font-pixel);
   font-size: 0.7rem;
-  color: var(--rpg-gold);
+  color: var(--gta-pink);
+  text-shadow: 0 0 8px var(--gta-pink-glow);
   text-align: center;
   padding-bottom: 12px;
   border-bottom: 2px dashed var(--pixel-border-color);
@@ -517,9 +560,9 @@ body.crt-enabled .crt-overlay {
 }
 
 .mobile-hud-link:hover {
-  border-color: var(--rpg-gold);
-  color: var(--rpg-gold);
-  background-color: var(--rpg-gold-dim);
+  border-color: var(--gta-pink);
+  color: var(--gta-cyan);
+  background-color: var(--gta-pink-glow);
 }
 
 .status-tip {
@@ -535,7 +578,7 @@ body.crt-enabled .crt-overlay {
    -------------------------------------------------------------------------- */
 .hero-section {
   padding-top: calc(var(--header-h) + 38px);
-  padding-bottom: 50px;
+  padding-bottom: 96px;
 }
 
 .hero-layout {
@@ -564,7 +607,7 @@ body.crt-enabled .crt-overlay {
   place-items: center;
   background-color: var(--rpg-bg-alt);
   border: 3px solid var(--gta-pink);
-  box-shadow: 0 0 16px rgba(255, 42, 141, 0.4), inset 0 0 10px rgba(255, 42, 141, 0.35);
+  box-shadow: 0 0 18px var(--gta-pink-glow), inset 0 0 10px rgba(255, 42, 141, 0.35);
   font-size: 2.2rem;
   flex-shrink: 0;
 }
@@ -577,18 +620,20 @@ body.crt-enabled .crt-overlay {
 
 .player-name {
   font-family: var(--font-pixel);
-  font-size: clamp(0.9rem, 2.8vw, 1.3rem);
-  background: linear-gradient(180deg, #ff2a8d 10%, #ff7300 55%, #ffd000 100%);
+  font-size: clamp(0.95rem, 3vw, 1.4rem);
+  background: linear-gradient(180deg, #ff177d 0%, #ff4d6d 30%, #ff7800 65%, #ffd000 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  filter: drop-shadow(2px 2px 0px rgba(0, 0, 0, 0.95));
+  filter: drop-shadow(0 0 12px rgba(255, 42, 141, 0.55)) drop-shadow(2px 2px 0px rgba(0, 0, 0, 0.95));
   letter-spacing: -0.01em;
 }
 
 .player-subtitle {
   font-family: var(--font-screen);
-  font-size: 0.78rem;
-  color: var(--text-muted);
+  font-size: 0.8rem;
+  color: var(--gta-cyan);
+  text-shadow: 0 0 6px var(--gta-cyan-glow);
+  letter-spacing: 0.06em;
 }
 
 .badge-row {
@@ -622,9 +667,9 @@ body.crt-enabled .crt-overlay {
   font-size: 0.58rem;
 }
 
-.hp-text { color: var(--rpg-hp); }
-.mp-text { color: var(--rpg-mp); }
-.exp-text { color: var(--rpg-exp); }
+.hp-text { color: var(--rpg-hp); text-shadow: 0 0 6px rgba(255, 23, 116, 0.6); }
+.mp-text { color: var(--rpg-mp); text-shadow: 0 0 6px var(--gta-cyan-glow); }
+.exp-text { color: var(--rpg-exp); text-shadow: 0 0 6px rgba(255, 153, 0, 0.6); }
 
 .meter-bar-track {
   height: 12px;
@@ -658,16 +703,23 @@ body.crt-enabled .crt-overlay {
 
 .dialogue-speaker {
   font-family: var(--font-pixel);
-  font-size: 0.75rem;
-  color: var(--rpg-gold);
+  font-size: 0.78rem;
+  color: var(--gta-pink);
+  text-shadow: 0 0 10px var(--gta-pink-glow);
+}
+
+.speaker-name {
+  color: var(--gta-pink);
+  text-shadow: 0 0 10px var(--gta-pink-glow);
 }
 
 .dialogue-text {
   font-family: var(--font-retro);
-  font-size: 1.45rem;
-  line-height: 1.4;
-  color: var(--text-main);
+  font-size: 1.55rem;
+  line-height: 1.45;
+  color: #ffffff;
   min-height: 80px;
+  text-shadow: 0 0 3px rgba(255, 255, 255, 0.4);
 }
 
 .dialogue-actions {
@@ -685,8 +737,10 @@ body.crt-enabled .crt-overlay {
 
 .cheat-hint {
   font-family: var(--font-pixel);
-  font-size: 0.52rem;
-  color: var(--text-dim);
+  font-size: 0.54rem;
+  color: var(--gta-cyan);
+  text-shadow: 0 0 6px var(--gta-cyan-glow);
+  opacity: 0.9;
 }
 
 /* --------------------------------------------------------------------------
@@ -701,7 +755,8 @@ body.crt-enabled .crt-overlay {
 .pixel-lead {
   font-family: var(--font-screen);
   font-size: 0.95rem;
-  color: var(--rpg-gold);
+  color: var(--gta-pink);
+  text-shadow: 0 0 8px var(--gta-pink-glow);
   margin-bottom: 12px;
   line-height: 1.5;
 }
@@ -742,7 +797,8 @@ body.crt-enabled .crt-overlay {
 .buff-title {
   font-family: var(--font-pixel);
   font-size: 0.58rem;
-  color: var(--rpg-gold);
+  color: var(--gta-cyan);
+  text-shadow: 0 0 6px var(--gta-cyan-glow);
 }
 
 .buff-desc {
@@ -763,8 +819,9 @@ body.crt-enabled .crt-overlay {
   gap: 8px;
   margin-bottom: 12px;
   font-family: var(--font-pixel);
-  font-size: 0.55rem;
-  color: var(--rpg-gold);
+  font-size: 0.58rem;
+  color: var(--gta-cyan);
+  text-shadow: 0 0 6px var(--gta-cyan-glow);
 }
 
 .jukebox-led {
@@ -931,10 +988,10 @@ body.crt-enabled .crt-overlay {
 .quest-title {
   font-family: var(--font-pixel);
   font-size: clamp(0.85rem, 2.5vw, 1.15rem);
-  background: linear-gradient(180deg, #ff2a8d 10%, #ff7300 55%, #ffd000 100%);
+  background: linear-gradient(180deg, #ff177d 0%, #ff5233 40%, #ff8c00 70%, #ffd000 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  filter: drop-shadow(2px 2px 0px rgba(0, 0, 0, 0.9));
+  filter: drop-shadow(0 0 8px rgba(255, 42, 141, 0.5)) drop-shadow(2px 2px 0px rgba(0, 0, 0, 0.9));
   line-height: 1.4;
 }
 
@@ -953,8 +1010,9 @@ body.crt-enabled .crt-overlay {
 .obj-header {
   display: block;
   font-family: var(--font-pixel);
-  font-size: 0.55rem;
-  color: var(--rpg-gold);
+  font-size: 0.58rem;
+  color: var(--gta-pink);
+  text-shadow: 0 0 6px var(--gta-pink-glow);
   margin-bottom: 8px;
 }
 
@@ -1018,8 +1076,8 @@ body.crt-enabled .crt-overlay {
   width: 3px;
   background: repeating-linear-gradient(
     to bottom,
-    var(--rpg-gold) 0px,
-    var(--rpg-gold) 8px,
+    var(--gta-pink) 0px,
+    var(--gta-pink) 8px,
     transparent 8px,
     transparent 16px
   );
@@ -1042,11 +1100,11 @@ body.crt-enabled .crt-overlay {
 
 .stage-title {
   font-family: var(--font-pixel);
-  font-size: 0.76rem;
-  background: linear-gradient(180deg, #ff2a8d 10%, #ff7300 55%, #ffd000 100%);
+  font-size: 0.78rem;
+  background: linear-gradient(180deg, #ff177d 0%, #ff5233 40%, #ff8c00 70%, #ffd000 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  filter: drop-shadow(1px 1px 0px rgba(0, 0, 0, 0.9));
+  filter: drop-shadow(0 0 6px rgba(255, 42, 141, 0.4)) drop-shadow(1px 1px 0px rgba(0, 0, 0, 0.9));
   margin-bottom: 8px;
 }
 
@@ -1083,8 +1141,9 @@ body.crt-enabled .crt-overlay {
 
 .guild-info-key {
   font-family: var(--font-pixel);
-  font-size: 0.52rem;
-  color: var(--rpg-gold);
+  font-size: 0.54rem;
+  color: var(--gta-pink);
+  text-shadow: 0 0 6px var(--gta-pink-glow);
 }
 
 .guild-info-val {
@@ -1093,7 +1152,8 @@ body.crt-enabled .crt-overlay {
 }
 
 .guild-link {
-  color: var(--rpg-gold);
+  color: var(--gta-cyan);
+  text-shadow: 0 0 6px var(--gta-cyan-glow);
   text-decoration: underline;
 }
 
@@ -1111,8 +1171,9 @@ body.crt-enabled .crt-overlay {
 
 .pixel-label {
   font-family: var(--font-pixel);
-  font-size: 0.55rem;
-  color: var(--rpg-gold);
+  font-size: 0.58rem;
+  color: var(--gta-pink);
+  text-shadow: 0 0 6px var(--gta-pink-glow);
 }
 
 .pixel-input {
@@ -1128,8 +1189,8 @@ body.crt-enabled .crt-overlay {
 }
 
 .pixel-input:focus {
-  border-color: var(--rpg-gold);
-  box-shadow: 0 0 8px rgba(246, 196, 69, 0.35);
+  border-color: var(--gta-cyan);
+  box-shadow: 0 0 10px var(--gta-cyan-glow);
 }
 
 .form-status {
@@ -1148,16 +1209,17 @@ body.crt-enabled .crt-overlay {
    -------------------------------------------------------------------------- */
 .rpg-audio-widget {
   position: fixed;
-  bottom: 34px;
-  left: 16px;
+  bottom: 24px;
+  right: 20px;
   z-index: 90;
   display: flex;
   align-items: center;
   gap: 10px;
   background-color: var(--rpg-glass);
-  padding: 6px 12px;
-  border: 2px solid var(--rpg-gold);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  padding: 8px 14px;
+  border: 2px solid var(--gta-pink);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6), 0 0 14px var(--gta-pink-glow);
+  backdrop-filter: blur(8px);
 }
 
 .audio-vol-wrap {
@@ -1168,14 +1230,15 @@ body.crt-enabled .crt-overlay {
 
 .vol-label {
   font-family: var(--font-pixel);
-  font-size: 0.52rem;
-  color: var(--rpg-gold);
+  font-size: 0.54rem;
+  color: var(--gta-cyan);
+  text-shadow: 0 0 6px var(--gta-cyan-glow);
 }
 
 .pixel-range {
   width: 65px;
   height: 6px;
-  accent-color: var(--rpg-gold);
+  accent-color: var(--gta-pink);
   cursor: pointer;
 }
 
@@ -1185,13 +1248,13 @@ body.crt-enabled .crt-overlay {
   left: 50%;
   transform: translateX(-50%) translateY(20px);
   z-index: 120;
-  background-color: #0d1117;
-  color: var(--rpg-gold);
-  border: 2px solid var(--rpg-gold);
+  background-color: #0d0418;
+  color: var(--gta-cyan);
+  border: 2px solid var(--gta-pink);
   padding: 10px 16px;
   font-family: var(--font-pixel);
   font-size: 0.65rem;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7), 0 0 16px var(--gta-pink-glow);
   opacity: 0;
   visibility: hidden;
   transition: opacity 0.2s, transform 0.2s, visibility 0.2s;
@@ -1225,8 +1288,11 @@ body.crt-enabled .crt-overlay {
 
 .footer-retro-text {
   font-family: var(--font-pixel);
-  font-size: 0.65rem;
-  color: var(--rpg-gold);
+  font-size: 0.68rem;
+  background: linear-gradient(180deg, #ff177d 0%, #ff5233 40%, #ff8c00 70%, #ffd000 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 8px rgba(255, 42, 141, 0.5));
 }
 
 .arcade-blink {
@@ -1247,11 +1313,13 @@ body.crt-enabled .crt-overlay {
 }
 
 .footer-links a:hover {
-  color: var(--rpg-gold);
+  color: var(--gta-pink);
+  text-shadow: 0 0 6px var(--gta-pink-glow);
 }
 
 .footer-sep {
-  color: var(--rpg-gold);
+  color: var(--gta-cyan);
+  text-shadow: 0 0 6px var(--gta-cyan-glow);
 }
 
 .footer-copy {

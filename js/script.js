@@ -776,7 +776,7 @@
         ctx.fillRect(-coinW / 2, -10, coinW, 20);
 
         // "+100" Points popup
-        ctx.fillStyle = isLight ? "#b27300" : "#f6c445";
+        ctx.fillStyle = isLight ? "#d9006c" : "#00f0ff";
         ctx.font = "bold 11px 'Press Start 2P', monospace";
         ctx.textAlign = "center";
         ctx.fillText("+100", 0, -18);
