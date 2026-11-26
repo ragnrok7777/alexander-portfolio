@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Silkscreen:wght@400;700&family=VT323&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
 
-  <link rel="stylesheet" href="css/style.css?v=gta6-v3" />
+  <link rel="stylesheet" href="css/style.css?v=gta6-v4" />
   <script>
     (function () {
       try {
@@ -45,12 +45,12 @@
       </a>
 
       <!-- Retro Arcade HUD Mini-Game Stats (Coin Counter & Score) -->
-      <div class="hud-arcade-stats" aria-label="Arcade Mini-Game Stats">
-        <div class="hud-stat-pill hud-coin-pill" title="Coins collected from Mario hitting [?] blocks!">
+      <div class="hud-arcade-stats arcade-launch-trigger" id="hud-stats-btn" title="Click to launch Playable Mario Arcade Game!" aria-label="Arcade Mini-Game Stats">
+        <div class="hud-stat-pill hud-coin-pill" title="Coins collected! Click to play game.">
           <span class="hud-stat-coin-icon" aria-hidden="true">🪙</span>
           <span class="hud-stat-val" id="hud-coin-count">x 00</span>
         </div>
-        <div class="hud-stat-pill hud-score-pill" title="Arcade Quest Score">
+        <div class="hud-stat-pill hud-score-pill" title="Arcade Score! Click to play game.">
           <span class="hud-stat-label">SCORE:</span>
           <span class="hud-stat-val" id="hud-score-val">000000</span>
         </div>
@@ -67,6 +67,11 @@
       </nav>
 
       <div class="hud-controls">
+        <!-- Play Game Arcade Launcher Button -->
+        <button type="button" class="pixel-btn pixel-btn-sm pixel-btn-primary arcade-launch-trigger" id="hud-play-game-btn" title="Launch Playable Mario Arcade Machine!">
+          <span class="arcade-blink">🕹️ PLAY GAME</span>
+        </button>
+
         <!-- CRT Filter Toggle -->
         <button type="button" class="pixel-btn pixel-btn-sm" id="crt-toggle" title="Toggle CRT Arcade Scanline Effect">
           <span class="btn-text">CRT: ON</span>
@@ -186,7 +191,10 @@
             </p>
 
             <div class="dialogue-actions">
-              <a href="#projects" class="pixel-btn pixel-btn-primary">
+              <button type="button" class="pixel-btn pixel-btn-primary arcade-launch-trigger" id="dialogue-play-game-btn" title="Launch Fullscreen Playable Mario Arcade Game!">
+                <span>🕹️ PLAY GAME</span>
+              </button>
+              <a href="#projects" class="pixel-btn pixel-btn-secondary">
                 <span>► ACTIVE QUESTS</span>
               </a>
               <button type="button" class="pixel-btn pixel-btn-secondary" id="resume-open-btn" title="Inspect / Download Alexander George's Resume Scroll">
@@ -972,6 +980,67 @@
     </div>
   </div>
 
+  <!-- =====================================================================
+       RETRO ARCADE CABINET // PLAYABLE MARIO MINI-GAME MODAL
+       ===================================================================== -->
+  <div class="arcade-cabinet-backdrop" id="arcade-cabinet-modal" aria-hidden="true" role="dialog" aria-labelledby="arcade-title">
+    <div class="arcade-cabinet-frame">
+      <!-- Top Glowing Arcade Marquee -->
+      <div class="arcade-marquee">
+        <span class="arcade-marquee-star">★</span>
+        <span class="arcade-marquee-title" id="arcade-title">ALEXANDER ARCADE // MARIO CODE QUEST</span>
+        <span class="arcade-marquee-star">★</span>
+        <button type="button" class="arcade-cabinet-exit" id="arcade-exit-btn" title="Exit Arcade Game (Esc)">&times; EXIT</button>
+      </div>
+
+      <!-- Real Game Canvas & CRT Bezel -->
+      <div class="arcade-screen-container">
+        <canvas id="arcade-game-canvas" width="640" height="360" class="arcade-game-canvas"></canvas>
+        <div class="arcade-screen-crt-scanlines" aria-hidden="true"></div>
+
+        <!-- In-Game Overlay (Game Over / Stage Clear) -->
+        <div class="arcade-overlay" id="arcade-game-overlay" style="display: none;">
+          <h2 class="arcade-overlay-title" id="arcade-overlay-title">GAME OVER</h2>
+          <p class="arcade-overlay-score" id="arcade-overlay-score">FINAL SCORE: 000000</p>
+          <div class="arcade-overlay-actions">
+            <button type="button" class="pixel-btn pixel-btn-primary" id="arcade-restart-btn">
+              <span>► PLAY AGAIN</span>
+            </button>
+            <button type="button" class="pixel-btn pixel-btn-secondary" id="arcade-overlay-exit-btn">
+              <span>EXIT ARCADE</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Arcade Bezel Controls / Touch D-Pad for Mobile -->
+      <div class="arcade-cabinet-dashboard">
+        <div class="arcade-instruction-strip">
+          <span>[A] [D] / [←] [→] = RUN</span>
+          <span class="strip-sep">•</span>
+          <span>[W] / [↑] / [SPACE] = JUMP</span>
+          <span class="strip-sep">•</span>
+          <span>STOMP GOOMBAS & HIT [?] BLOCKS</span>
+          <span class="strip-sep">•</span>
+          <span>REACH CASTLE FLAG TO WIN!</span>
+        </div>
+
+        <div class="arcade-mobile-touch-controls">
+          <div class="arcade-touch-dpad">
+            <button type="button" class="arcade-touch-btn" id="dpad-left" aria-label="Move Left">◄</button>
+            <button type="button" class="arcade-touch-btn" id="dpad-right" aria-label="Move Right">►</button>
+          </div>
+          <div class="arcade-touch-actions">
+            <button type="button" class="arcade-touch-btn arcade-touch-btn-jump" id="touch-jump" aria-label="Jump">
+              <span>A</span>
+              <small>JUMP</small>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Announcement Popup -->
   <div class="rpg-toast" id="rpg-toast" role="status" aria-live="polite">
     <span id="toast-message">Quest Log Updated!</span>
@@ -1000,6 +1069,6 @@
     </div>
   </footer>
 
-  <script src="js/script.js?v=gta6-v3"></script>
+  <script src="js/script.js?v=gta6-v4"></script>
 </body>
 </html>

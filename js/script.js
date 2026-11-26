@@ -1194,6 +1194,625 @@
   }
 
   /* ------------------------------------------------------------------------
+     16. Full Playable Retro Arcade Mario Game Engine
+     ------------------------------------------------------------------------ */
+  function initPlayableArcadeGame() {
+    const modal = document.getElementById("arcade-cabinet-modal");
+    const canvas = document.getElementById("arcade-game-canvas");
+    const exitBtn = document.getElementById("arcade-exit-btn");
+    const overlayExitBtn = document.getElementById("arcade-overlay-exit-btn");
+    const restartBtn = document.getElementById("arcade-restart-btn");
+    const overlay = document.getElementById("arcade-game-overlay");
+    const overlayTitle = document.getElementById("arcade-overlay-title");
+    const overlayScore = document.getElementById("arcade-overlay-score");
+    if (!modal || !canvas) return;
+
+    const ctx = canvas.getContext("2d");
+    const GAME_W = 640;
+    const GAME_H = 360;
+    let isRunning = false;
+    let gameLoopId = null;
+
+    // Goomba 12x12 Sprite Matrix
+    const GOOMBA_F1 = [
+      "....DDDD....",
+      "...DDDDDD...",
+      "..DDDDDDDD..",
+      "..DDSSSSDD..",
+      ".DDSSDDSSDD.",
+      ".DDSSDDSSDD.",
+      ".DDDDDDDDDD.",
+      "..DDDDDDDD..",
+      "...DDDDDD...",
+      "...DD..DD...",
+      "..DDD..DDD..",
+      ".DDDD..DDDD."
+    ];
+    const GOOMBA_F2 = [
+      "....DDDD....",
+      "...DDDDDD...",
+      "..DDDDDDDD..",
+      "..DDSSSSDD..",
+      ".DDSSDDSSDD.",
+      ".DDSSDDSSDD.",
+      ".DDDDDDDDDD.",
+      "..DDDDDDDD..",
+      "...DDDDDD...",
+      "..DD....DD..",
+      ".DDD....DDD.",
+      ".DDD....DDD."
+    ];
+
+    // Game state
+    let player = null;
+    let blocks = [];
+    let enemies = [];
+    let coins = [];
+    let goalFlag = null;
+    let cameraX = 0;
+    let gameTime = 300;
+    let timeTick = 0;
+    let isGameOver = false;
+    let isStageClear = false;
+
+    // Controls
+    const keys = {
+      left: false,
+      right: false,
+      jump: false
+    };
+
+    function resetGame() {
+      player = {
+        x: 50,
+        y: 260,
+        w: 24,
+        h: 36,
+        vx: 0,
+        vy: 0,
+        speed: 3.8,
+        jumpPower: -11.2,
+        gravity: 0.58,
+        grounded: false,
+        facing: "right",
+        lives: 3,
+        invulnerable: 0,
+        frameTick: 0,
+        currentFrame: 0
+      };
+
+      cameraX = 0;
+      gameTime = 300;
+      timeTick = 0;
+      isGameOver = false;
+      isStageClear = false;
+      coins = [];
+
+      if (overlay) overlay.style.display = "none";
+
+      // Build Level World 1-1
+      blocks = [
+        // Mystery [?] blocks & brick platforms
+        { x: 220, y: 220, w: 32, h: 32, isHit: false, bounceY: 0, type: "mystery" },
+        { x: 252, y: 220, w: 32, h: 32, isHit: false, bounceY: 0, type: "brick" },
+        { x: 284, y: 220, w: 32, h: 32, isHit: false, bounceY: 0, type: "mystery" },
+        { x: 316, y: 220, w: 32, h: 32, isHit: false, bounceY: 0, type: "brick" },
+        { x: 348, y: 220, w: 32, h: 32, isHit: false, bounceY: 0, type: "mystery" },
+
+        // Higher floating platform
+        { x: 460, y: 150, w: 32, h: 32, isHit: false, bounceY: 0, type: "mystery" },
+        { x: 492, y: 150, w: 32, h: 32, isHit: false, bounceY: 0, type: "brick" },
+        { x: 524, y: 150, w: 32, h: 32, isHit: false, bounceY: 0, type: "mystery" },
+
+        // Mid section platforms
+        { x: 700, y: 220, w: 32, h: 32, isHit: false, bounceY: 0, type: "brick" },
+        { x: 732, y: 220, w: 32, h: 32, isHit: false, bounceY: 0, type: "mystery" },
+        { x: 764, y: 220, w: 32, h: 32, isHit: false, bounceY: 0, type: "brick" },
+        { x: 796, y: 220, w: 32, h: 32, isHit: false, bounceY: 0, type: "mystery" },
+
+        // Staircase to Flagpole
+        { x: 1100, y: 260, w: 32, h: 32, isHit: false, bounceY: 0, type: "brick" },
+        { x: 1132, y: 228, w: 32, h: 64, isHit: false, bounceY: 0, type: "brick" },
+        { x: 1164, y: 196, w: 32, h: 96, isHit: false, bounceY: 0, type: "brick" },
+        { x: 1196, y: 164, w: 32, h: 128, isHit: false, bounceY: 0, type: "brick" }
+      ];
+
+      // Enemies (Goombas)
+      enemies = [
+        { x: 380, y: 276, w: 24, h: 24, vx: -1.2, minX: 200, maxX: 600, squished: false, squishTimer: 0 },
+        { x: 620, y: 276, w: 24, h: 24, vx: 1.2, minX: 560, maxX: 850, squished: false, squishTimer: 0 },
+        { x: 920, y: 276, w: 24, h: 24, vx: -1.4, minX: 840, maxX: 1080, squished: false, squishTimer: 0 }
+      ];
+
+      // Castle & Flagpole
+      goalFlag = {
+        x: 1380,
+        poleY: 80,
+        poleH: 220,
+        flagY: 90,
+        castleX: 1480,
+        cleared: false
+      };
+    }
+
+    // Launch Arcade Game
+    function openArcade() {
+      modal.classList.add("is-open");
+      modal.setAttribute("aria-hidden", "false");
+      document.body.style.overflow = "hidden";
+      isRunning = true;
+      resetGame();
+      playBeep(620, 0.12, "square");
+      if (gameLoopId) cancelAnimationFrame(gameLoopId);
+      gameLoop();
+    }
+
+    // Close Arcade Game
+    function closeArcade() {
+      modal.classList.remove("is-open");
+      modal.setAttribute("aria-hidden", "true");
+      document.body.style.overflow = "";
+      isRunning = false;
+      if (gameLoopId) cancelAnimationFrame(gameLoopId);
+      playBeep(420, 0.08, "square");
+    }
+
+    // Bind Launch Triggers
+    document.querySelectorAll(".arcade-launch-trigger").forEach((el) => {
+      el.addEventListener("click", (e) => {
+        e.preventDefault();
+        openArcade();
+      });
+    });
+
+    if (exitBtn) exitBtn.addEventListener("click", closeArcade);
+    if (overlayExitBtn) overlayExitBtn.addEventListener("click", closeArcade);
+    if (restartBtn) restartBtn.addEventListener("click", () => {
+      resetGame();
+      playBeep(520, 0.1, "square");
+    });
+
+    // Keyboard controls for game
+    window.addEventListener("keydown", (e) => {
+      // Global shortcut [G] opens game if not in input
+      if ((e.key === "g" || e.key === "G") && !modal.classList.contains("is-open") && !["INPUT", "TEXTAREA"].includes(document.activeElement?.tagName)) {
+        openArcade();
+        return;
+      }
+
+      if (!isRunning) return;
+
+      if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") {
+        keys.left = true;
+      }
+      if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") {
+        keys.right = true;
+      }
+      if (e.key === "ArrowUp" || e.key === "w" || e.key === "W" || e.code === "Space") {
+        e.preventDefault();
+        if (player && player.grounded && !isGameOver && !isStageClear) {
+          player.vy = player.jumpPower;
+          player.grounded = false;
+          playBeep(480, 0.08, "square");
+        }
+      }
+      if (e.key === "Escape") {
+        closeArcade();
+      }
+    });
+
+    window.addEventListener("keyup", (e) => {
+      if (!isRunning) return;
+      if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") keys.left = false;
+      if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") keys.right = false;
+    });
+
+    // Mobile touch controls for arcade modal
+    const dpadL = document.getElementById("dpad-left");
+    const dpadR = document.getElementById("dpad-right");
+    const dpadJump = document.getElementById("touch-jump");
+
+    function bindTouch(btn, onDown, onUp) {
+      if (!btn) return;
+      btn.addEventListener("touchstart", (e) => { e.preventDefault(); onDown(); }, { passive: false });
+      btn.addEventListener("touchend", (e) => { e.preventDefault(); onUp(); }, { passive: false });
+      btn.addEventListener("mousedown", onDown);
+      btn.addEventListener("mouseup", onUp);
+      btn.addEventListener("mouseleave", onUp);
+    }
+
+    bindTouch(dpadL, () => { keys.left = true; }, () => { keys.left = false; });
+    bindTouch(dpadR, () => { keys.right = true; }, () => { keys.right = false; });
+    bindTouch(dpadJump, () => {
+      if (player && player.grounded && !isGameOver && !isStageClear) {
+        player.vy = player.jumpPower;
+        player.grounded = false;
+        playBeep(480, 0.08, "square");
+      }
+    }, () => {});
+
+    // Draw Mario Sprite inside Game
+    function drawGameMario(p) {
+      ctx.save();
+      ctx.translate(p.x - cameraX, p.y);
+      if (p.facing === "left") {
+        ctx.scale(-1, 1);
+        ctx.translate(-p.w, 0);
+      }
+
+      // Invulnerable flicker
+      if (p.invulnerable > 0 && Math.floor(p.invulnerable * 10) % 2 === 0) {
+        ctx.globalAlpha = 0.4;
+      }
+
+      let matrix = MARIO_F1;
+      if (!p.grounded) {
+        matrix = MARIO_JUMP;
+      } else if (Math.abs(p.vx) > 0.5) {
+        const run = [MARIO_F1, MARIO_F2, MARIO_F3, MARIO_F2];
+        matrix = run[Math.floor(p.currentFrame) % run.length];
+      }
+
+      const scale = 2.4;
+      const colorMap = {
+        R: "#ff2a8d", // GTA VI Neon Pink cap & shirt
+        B: "#00f0ff", // Vice Cyan overalls
+        S: "#fcc082", // Peach skin tone
+        D: "#511b7d", // Boots / hair
+        Y: "#ffd000"  // Gold button
+      };
+
+      for (let r = 0; r < matrix.length; r++) {
+        const row = matrix[r];
+        for (let c = 0; c < row.length; c++) {
+          const char = row[c];
+          if (char !== "." && colorMap[char]) {
+            ctx.fillStyle = colorMap[char];
+            ctx.fillRect(c * scale, r * scale, scale, scale);
+          }
+        }
+      }
+      ctx.restore();
+    }
+
+    // Draw Goomba
+    function drawGoomba(g) {
+      if (g.squished) {
+        ctx.fillStyle = "#8b4513";
+        ctx.fillRect(g.x - cameraX, g.y + 16, g.w, 8);
+        return;
+      }
+
+      const frame = Math.floor(timeTick / 10) % 2 === 0 ? GOOMBA_F1 : GOOMBA_F2;
+      const scale = 2;
+      ctx.save();
+      ctx.translate(g.x - cameraX, g.y);
+      for (let r = 0; r < frame.length; r++) {
+        const row = frame[r];
+        for (let c = 0; c < row.length; c++) {
+          const char = row[c];
+          if (char === "D") {
+            ctx.fillStyle = "#ff6a00"; // Sunset Orange Goomba
+            ctx.fillRect(c * scale, r * scale, scale, scale);
+          } else if (char === "S") {
+            ctx.fillStyle = "#fff";
+            ctx.fillRect(c * scale, r * scale, scale, scale);
+          }
+        }
+      }
+      ctx.restore();
+    }
+
+    // Main 60FPS Game Loop
+    function gameLoop() {
+      if (!isRunning) return;
+
+      timeTick++;
+      if (timeTick % 60 === 0 && gameTime > 0 && !isGameOver && !isStageClear) {
+        gameTime--;
+        if (gameTime <= 0) triggerGameOver();
+      }
+
+      // Physics & Movement
+      if (!isGameOver && !isStageClear) {
+        if (keys.left) {
+          player.vx -= 0.6;
+          player.facing = "left";
+        }
+        if (keys.right) {
+          player.vx += 0.6;
+          player.facing = "right";
+        }
+        player.vx = Math.max(-player.speed, Math.min(player.speed, player.vx));
+        player.vx *= 0.85;
+
+        player.x += player.vx;
+        player.y += player.vy;
+        player.vy += player.gravity;
+
+        player.frameTick += 1;
+        if (player.frameTick % 6 === 0) player.currentFrame++;
+
+        if (player.invulnerable > 0) player.invulnerable -= 0.016;
+
+        // Ground Floor (y: 300)
+        const groundY = 300;
+        if (player.y + player.h >= groundY) {
+          player.y = groundY - player.h;
+          player.vy = 0;
+          player.grounded = true;
+        } else {
+          player.grounded = false;
+        }
+
+        // Platform & Block Collisions
+        blocks.forEach((b) => {
+          if (b.bounceY < 0) b.bounceY += 1;
+
+          // Mario hits block from underside
+          if (
+            player.vy < 0 &&
+            player.x + player.w > b.x &&
+            player.x < b.x + b.w &&
+            player.y <= b.y + b.h &&
+            player.y >= b.y + b.h - 14
+          ) {
+            player.vy = 2; // Bounce Mario head down
+            b.bounceY = -8;
+            if (!b.isHit && b.type === "mystery") {
+              b.isHit = true;
+              addCoin(100);
+              coins.push({
+                x: b.x + b.w / 2,
+                y: b.y - 12,
+                vy: -6,
+                life: 1.0,
+                rot: 0
+              });
+            } else {
+              playBeep(240, 0.06, "square");
+            }
+          }
+
+          // Mario lands on top of block
+          if (
+            player.vy >= 0 &&
+            player.x + player.w > b.x + 4 &&
+            player.x < b.x + b.w - 4 &&
+            player.y + player.h >= b.y + b.bounceY &&
+            player.y + player.h <= b.y + b.bounceY + 14
+          ) {
+            player.y = b.y + b.bounceY - player.h;
+            player.vy = 0;
+            player.grounded = true;
+          }
+        });
+
+        // Goombas AI & Collision
+        enemies.forEach((g) => {
+          if (g.squished) {
+            g.squishTimer += 0.016;
+            return;
+          }
+
+          g.x += g.vx;
+          if (g.x <= g.minX || g.x >= g.maxX) g.vx *= -1;
+
+          // Check collision with Mario
+          if (
+            player.x + player.w > g.x &&
+            player.x < g.x + g.w &&
+            player.y + player.h > g.y &&
+            player.y < g.y + g.h
+          ) {
+            // Stomp on Goomba from above!
+            if (player.vy > 0 && player.y + player.h < g.y + 14) {
+              g.squished = true;
+              player.vy = -7.5;
+              addCoin(200); // 200 points for stomp!
+              playBeep(400, 0.1, "sawtooth");
+            } else if (player.invulnerable <= 0) {
+              // Mario takes damage
+              player.lives -= 1;
+              player.invulnerable = 1.5;
+              player.vy = -6;
+              player.vx = player.facing === "right" ? -4 : 4;
+              playBeep(180, 0.25, "sawtooth");
+
+              if (player.lives <= 0) {
+                triggerGameOver();
+              }
+            }
+          }
+        });
+
+        // Flagpole Clear Check
+        if (player.x >= goalFlag.x && !goalFlag.cleared) {
+          goalFlag.cleared = true;
+          isStageClear = true;
+          addCoin(1000); // 1000 Victory Bonus
+          playFanfare();
+          setTimeout(() => {
+            if (overlay) {
+              overlay.style.display = "flex";
+              if (overlayTitle) overlayTitle.textContent = "★ STAGE CLEAR! ★";
+              if (overlayScore) overlayScore.textContent = `BONUS +1000 PTS! FINAL SCORE: ${String(totalScore).padStart(6, '0')}`;
+            }
+          }, 1200);
+        }
+
+        // Camera follow
+        cameraX = Math.max(0, player.x - 220);
+      }
+
+      // Update Flying Coins
+      coins = coins.filter((c) => c.life > 0);
+      coins.forEach((c) => {
+        c.y += c.vy;
+        c.vy += 0.35;
+        c.rot += 0.25;
+        c.life -= 0.024;
+      });
+
+      // RENDER
+      ctx.clearRect(0, 0, GAME_W, GAME_H);
+
+      // 1. Sky Gradient (GTA VI Sunset)
+      const skyGrad = ctx.createLinearGradient(0, 0, 0, GAME_H);
+      skyGrad.addColorStop(0, "#190833");
+      skyGrad.addColorStop(0.55, "#52104a");
+      skyGrad.addColorStop(1, "#942548");
+      ctx.fillStyle = skyGrad;
+      ctx.fillRect(0, 0, GAME_W, GAME_H);
+
+      // 2. Distant Pixel Mountains
+      ctx.fillStyle = "#120324";
+      ctx.beginPath();
+      ctx.moveTo(0, 300);
+      for (let mx = 0; mx <= GAME_W; mx += 80) {
+        ctx.lineTo(mx + 40, 220 + ((mx / 80) % 2) * 30);
+        ctx.lineTo(mx + 80, 300);
+      }
+      ctx.fill();
+
+      // 3. Ground Bricks (y: 300 to 360)
+      ctx.fillStyle = "#5c1b50";
+      ctx.fillRect(0, 300, GAME_W, 60);
+      ctx.fillStyle = "#ff2a8d"; // Neon pink curb line
+      ctx.fillRect(0, 300, GAME_W, 4);
+
+      // Ground brick grid lines
+      ctx.fillStyle = "#330b2c";
+      for (let bx = -Math.floor(cameraX % 32); bx < GAME_W; bx += 32) {
+        ctx.fillRect(bx, 304, 3, 56);
+      }
+
+      // 4. Blocks
+      blocks.forEach((b) => {
+        const bx = b.x - cameraX;
+        const by = b.y + b.bounceY;
+        if (bx + b.w < 0 || bx > GAME_W) return;
+
+        if (b.type === "mystery") {
+          ctx.fillStyle = b.isHit ? "#663e26" : "#ff7300";
+          ctx.fillRect(bx, by, b.w, b.h);
+          ctx.strokeStyle = "#381708";
+          ctx.lineWidth = 2;
+          ctx.strokeRect(bx, by, b.w, b.h);
+
+          // '?' or metal studs
+          ctx.fillStyle = b.isHit ? "#945c3d" : "#ffd000";
+          if (!b.isHit) {
+            ctx.font = "bold 16px 'Press Start 2P', monospace";
+            ctx.textAlign = "center";
+            ctx.fillText("?", bx + b.w / 2, by + 23);
+          } else {
+            ctx.fillRect(bx + 4, by + 4, 3, 3);
+            ctx.fillRect(bx + b.w - 7, by + 4, 3, 3);
+          }
+        } else {
+          // Brick block
+          ctx.fillStyle = "#8a3219";
+          ctx.fillRect(bx, by, b.w, b.h);
+          ctx.strokeStyle = "#471305";
+          ctx.lineWidth = 2;
+          ctx.strokeRect(bx, by, b.w, b.h);
+        }
+      });
+
+      // 5. Coins
+      coins.forEach((c) => {
+        ctx.save();
+        ctx.translate(c.x - cameraX, c.y);
+        ctx.fillStyle = "#ffd000";
+        const cw = Math.max(2, Math.abs(Math.cos(c.rot)) * 12);
+        ctx.fillRect(-cw / 2, -10, cw, 20);
+        ctx.fillStyle = "#00f0ff";
+        ctx.font = "bold 9px 'Press Start 2P', monospace";
+        ctx.textAlign = "center";
+        ctx.fillText("+100", 0, -14);
+        ctx.restore();
+      });
+
+      // 6. Flagpole & Castle
+      const fX = goalFlag.x - cameraX;
+      if (fX > -100 && fX < GAME_W + 100) {
+        // Flagpole pole
+        ctx.fillStyle = "#00f0ff";
+        ctx.fillRect(fX, goalFlag.poleY, 6, goalFlag.poleH);
+        ctx.fillStyle = "#ffd000";
+        ctx.fillRect(fX - 4, goalFlag.poleY - 8, 14, 8); // Golden ball
+
+        // Flag
+        ctx.fillStyle = "#ff2a8d";
+        ctx.beginPath();
+        ctx.moveTo(fX + 6, goalFlag.flagY);
+        ctx.lineTo(fX + 38, goalFlag.flagY + 14);
+        ctx.lineTo(fX + 6, goalFlag.flagY + 28);
+        ctx.fill();
+
+        // 8-Bit Castle
+        const cX = goalFlag.castleX - cameraX;
+        ctx.fillStyle = "#1f0933";
+        ctx.fillRect(cX, 200, 100, 100);
+        ctx.fillStyle = "#ff2a8d"; // Neon castle door
+        ctx.fillRect(cX + 36, 250, 28, 50);
+      }
+
+      // 7. Enemies
+      enemies.forEach((g) => {
+        if (!g.squished || g.squishTimer < 0.4) {
+          drawGoomba(g);
+        }
+      });
+
+      // 8. Player (Mario)
+      drawGameMario(player);
+
+      // 9. In-Game HUD Header
+      ctx.fillStyle = "#fff";
+      ctx.font = "9px 'Press Start 2P', monospace";
+      ctx.textAlign = "left";
+      ctx.fillText("MARIO", 20, 22);
+      ctx.fillStyle = "#ffd000";
+      ctx.fillText(String(totalScore).padStart(6, "0"), 20, 36);
+
+      ctx.fillStyle = "#00f0ff";
+      ctx.fillText(`COINS x${coinsCount < 10 ? "0" + coinsCount : coinsCount}`, 160, 36);
+
+      ctx.fillStyle = "#fff";
+      ctx.fillText("WORLD", 330, 22);
+      ctx.fillStyle = "#ff2a8d";
+      ctx.fillText("1-1", 345, 36);
+
+      ctx.fillStyle = "#fff";
+      ctx.fillText("TIME", 450, 22);
+      ctx.fillStyle = "#ffd000";
+      ctx.fillText(String(gameTime).padStart(3, "0"), 455, 36);
+
+      // Lives Hearts
+      ctx.fillStyle = "#ff1774";
+      let hearts = "";
+      for (let h = 0; h < player.lives; h++) hearts += "♥ ";
+      ctx.fillText(hearts, 550, 36);
+
+      gameLoopId = requestAnimationFrame(gameLoop);
+    }
+
+    function triggerGameOver() {
+      isGameOver = true;
+      playBeep(180, 0.4, "sawtooth");
+      setTimeout(() => {
+        if (overlay) {
+          overlay.style.display = "flex";
+          if (overlayTitle) overlayTitle.textContent = "GAME OVER";
+          if (overlayScore) overlayScore.textContent = `FINAL SCORE: ${String(totalScore).padStart(6, '0')}`;
+        }
+      }, 600);
+    }
+  }
+
+  /* ------------------------------------------------------------------------
      Initialization
      ------------------------------------------------------------------------ */
   document.addEventListener("DOMContentLoaded", () => {
@@ -1201,6 +1820,7 @@
     initClickSparkles();
     initMobileJumpButton();
     initResumeModal();
+    initPlayableArcadeGame();
     initCRTToggle();
     initAudioControls();
     initThemeToggle();
