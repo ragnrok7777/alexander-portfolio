@@ -1,870 +1,566 @@
-/* ==========================================================================
-   PORTFOLIO SCRIPTS — Vanilla JavaScript
-   Step 6: Interactions, Scroll Reveals, Card Sheen & Ambient Canvas
-   ========================================================================== */
+/**
+ * ============================================================================
+ * ALEXANDER // RETRO PIXEL RPG & ARCADE JAVASCRIPT ENGINE
+ * Full-Stack Interactive Retro System: Web Audio Chiptune, Pixel Canvas,
+ * Typewriter Dialogue, CRT Shaders, Keyboard Shortcuts & Konami Easter Egg
+ * ============================================================================
+ */
 
-(() => {
+(function () {
   "use strict";
 
-  const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+  /* ------------------------------------------------------------------------
+     1. Web Audio API — 8-Bit Chiptune Synthesizer & Sound Effects Engine
+     ------------------------------------------------------------------------ */
+  let audioCtx = null;
+  let masterGain = null;
+  let sfxEnabled = true;
+  let bgmPlaying = false;
+  let bgmIntervalId = null;
+  let currentVol = 0.4;
 
-  // Mark document as JS-enhanced (used by Step 6 CSS reveal choreography)
-  document.documentElement.classList.add("js-ready");
+  function initAudioContext() {
+    if (!audioCtx) {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (AudioContextClass) {
+        audioCtx = new AudioContextClass();
+        masterGain = audioCtx.createGain();
+        masterGain.gain.setValueAtTime(currentVol, audioCtx.currentTime);
+        masterGain.connect(audioCtx.destination);
+      }
+    }
+    if (audioCtx && audioCtx.state === "suspended") {
+      audioCtx.resume();
+    }
+  }
+
+  // Play short 8-bit retro sound blip
+  function playBeep(freq = 600, duration = 0.06, type = "square") {
+    if (!sfxEnabled) return;
+    try {
+      initAudioContext();
+      if (!audioCtx || !masterGain) return;
+
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+
+      gain.gain.setValueAtTime(0.18, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+
+      osc.connect(gain);
+      gain.connect(masterGain);
+
+      osc.start();
+      osc.stop(audioCtx.currentTime + duration);
+    } catch (e) {}
+  }
+
+  // Play 8-bit Quest Loot / Level-Up Jingle
+  function playFanfare() {
+    if (!sfxEnabled) return;
+    try {
+      initAudioContext();
+      if (!audioCtx || !masterGain) return;
+
+      const notes = [523.25, 659.25, 783.99, 1046.5]; // C5, E5, G5, C6
+      notes.forEach((freq, index) => {
+        const startTime = audioCtx.currentTime + index * 0.11;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        osc.type = "square";
+        osc.frequency.setValueAtTime(freq, startTime);
+
+        gain.gain.setValueAtTime(0.2, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.18);
+
+        osc.connect(gain);
+        gain.connect(masterGain);
+
+        osc.start(startTime);
+        osc.stop(startTime + 0.19);
+      });
+    } catch (e) {}
+  }
+
+  // 8-Bit Chiptune Ambient BGM Sequence
+  const CHIPTUNE_MELODY = [
+    { note: 329.63, len: 0.16 }, // E4
+    { note: 392.00, len: 0.16 }, // G4
+    { note: 493.88, len: 0.16 }, // B4
+    { note: 587.33, len: 0.22 }, // D5
+    { note: 493.88, len: 0.16 }, // B4
+    { note: 392.00, len: 0.16 }, // G4
+    { note: 440.00, len: 0.26 }, // A4
+    { note: 329.63, len: 0.16 }, // E4
+    { note: 349.23, len: 0.16 }, // F4
+    { note: 440.00, len: 0.16 }, // A4
+    { note: 523.25, len: 0.22 }, // C5
+    { note: 392.00, len: 0.32 }, // G4
+  ];
+
+  let melodyIndex = 0;
+  function startChiptuneBGM() {
+    if (bgmPlaying) return;
+    initAudioContext();
+    bgmPlaying = true;
+    updateBGMUI();
+
+    function step() {
+      if (!bgmPlaying || !audioCtx || !masterGain) return;
+      const item = CHIPTUNE_MELODY[melodyIndex];
+      melodyIndex = (melodyIndex + 1) % CHIPTUNE_MELODY.length;
+
+      try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        osc.type = "triangle"; // softer pulse tone for background
+        osc.frequency.setValueAtTime(item.note, audioCtx.currentTime);
+
+        gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + item.len * 0.9);
+
+        osc.connect(gain);
+        gain.connect(masterGain);
+
+        osc.start();
+        osc.stop(audioCtx.currentTime + item.len);
+      } catch (e) {}
+
+      bgmIntervalId = window.setTimeout(step, item.len * 1000 + 40);
+    }
+
+    step();
+  }
+
+  function stopChiptuneBGM() {
+    bgmPlaying = false;
+    if (bgmIntervalId) {
+      clearTimeout(bgmIntervalId);
+      bgmIntervalId = null;
+    }
+    updateBGMUI();
+  }
+
+  function updateBGMUI() {
+    const icon = document.getElementById("bgm-btn-icon");
+    const label = document.getElementById("bgm-btn-label");
+    if (icon) icon.textContent = bgmPlaying ? "⏹" : "▶";
+    if (label) label.textContent = bgmPlaying ? "BGM: ON" : "BGM: OFF";
+  }
 
   /* ------------------------------------------------------------------------
-     1. Toast Notification Helper
+     2. Toast Notification System
      ------------------------------------------------------------------------ */
-  const toastEl = document.getElementById("toast");
   let toastTimer = null;
+  function showToast(text) {
+    const toast = document.getElementById("rpg-toast");
+    const msg = document.getElementById("toast-message");
+    if (!toast || !msg) return;
 
-  function showToast(message, duration = 3200) {
-    if (!toastEl || !message) return;
+    msg.textContent = text;
+    toast.classList.add("is-visible");
 
-    toastEl.textContent = message;
-    toastEl.classList.add("is-visible");
-
-    window.clearTimeout(toastTimer);
+    if (toastTimer) clearTimeout(toastTimer);
     toastTimer = window.setTimeout(() => {
-      toastEl.classList.remove("is-visible");
-    }, duration);
+      toast.classList.remove("is-visible");
+    }, 2800);
   }
 
   /* ------------------------------------------------------------------------
-     2. Sticky Header & Back-to-Top Visibility
+     3. CRT Scanline Toggle System
      ------------------------------------------------------------------------ */
-  function initScrollChrome() {
-    const header = document.getElementById("site-header");
-    const backToTop = document.getElementById("back-to-top");
+  function initCRTToggle() {
+    const crtBtn = document.getElementById("crt-toggle");
+    if (!crtBtn) return;
 
-    const onScroll = () => {
-      const y = window.scrollY;
-      if (header) {
-        header.classList.toggle("is-scrolled", y > 24);
-      }
-      if (backToTop) {
-        backToTop.classList.toggle("is-visible", y > 420);
-      }
-    };
+    const savedCRT = localStorage.getItem("rpg-crt");
+    const isCRTActive = savedCRT !== "off";
 
-    window.addEventListener("scroll", onScroll, { passive: true });
-    onScroll();
+    document.body.classList.toggle("crt-enabled", isCRTActive);
+    crtBtn.querySelector(".btn-text").textContent = isCRTActive ? "CRT: ON" : "CRT: OFF";
 
-    if (backToTop) {
-      backToTop.addEventListener("click", () => {
-        window.scrollTo({
-          top: 0,
-          behavior: prefersReducedMotion.matches ? "auto" : "smooth",
-        });
+    crtBtn.addEventListener("click", () => {
+      playBeep(900, 0.05);
+      const currentlyOn = document.body.classList.toggle("crt-enabled");
+      crtBtn.querySelector(".btn-text").textContent = currentlyOn ? "CRT: ON" : "CRT: OFF";
+      localStorage.setItem("rpg-crt", currentlyOn ? "on" : "off");
+      showToast(currentlyOn ? "CRT Scanlines Enabled" : "CRT Scanlines Disabled");
+    });
+  }
+
+  /* ------------------------------------------------------------------------
+     4. Sound Effects & BGM Control
+     ------------------------------------------------------------------------ */
+  function initAudioControls() {
+    const sfxBtn = document.getElementById("sfx-toggle");
+    const sfxText = document.getElementById("sfx-toggle-text");
+    const bgmBtn = document.getElementById("bgm-play-btn");
+    const volSlider = document.getElementById("bgm-volume");
+
+    if (sfxBtn && sfxText) {
+      sfxBtn.addEventListener("click", () => {
+        sfxEnabled = !sfxEnabled;
+        sfxText.textContent = sfxEnabled ? "SFX: ON" : "SFX: OFF";
+        if (sfxEnabled) playBeep(750, 0.06);
+        showToast(sfxEnabled ? "Sound FX: ON" : "Sound FX: MUTED");
       });
     }
-  }
 
-  /* ------------------------------------------------------------------------
-     3. Mobile Navigation Drawer
-     ------------------------------------------------------------------------ */
-  function initMobileNav() {
-    const toggleBtn = document.getElementById("menu-toggle");
-    const mobileNav = document.getElementById("mobile-nav");
-    if (!toggleBtn || !mobileNav) return;
-
-    const mobileLinks = mobileNav.querySelectorAll("a");
-
-    const setMenuState = (isOpen) => {
-      toggleBtn.classList.toggle("is-open", isOpen);
-      mobileNav.classList.toggle("is-open", isOpen);
-      document.body.classList.toggle("nav-open", isOpen);
-      toggleBtn.setAttribute("aria-expanded", String(isOpen));
-      toggleBtn.setAttribute(
-        "aria-label",
-        isOpen ? "Close navigation menu" : "Open navigation menu"
-      );
-      mobileNav.setAttribute("aria-hidden", String(!isOpen));
-    };
-
-    toggleBtn.addEventListener("click", () => {
-      const currentlyOpen = toggleBtn.classList.contains("is-open");
-      setMenuState(!currentlyOpen);
-    });
-
-    mobileLinks.forEach((link) => {
-      link.addEventListener("click", () => setMenuState(false));
-    });
-
-    document.addEventListener("keydown", (event) => {
-      if (event.key === "Escape" && mobileNav.classList.contains("is-open")) {
-        setMenuState(false);
-        toggleBtn.focus();
-      }
-    });
-
-    window.addEventListener("resize", () => {
-      if (window.innerWidth >= 900 && mobileNav.classList.contains("is-open")) {
-        setMenuState(false);
-      }
-    });
-  }
-
-  /* ------------------------------------------------------------------------
-     4. Smooth Anchor Scrolling & Active Nav Highlighting (Scroll Spy)
-     ------------------------------------------------------------------------ */
-  function initNavigationSpy() {
-    const navLinks = Array.from(document.querySelectorAll(".desktop-nav .nav-link"));
-    const sections = navLinks
-      .map((link) => {
-        const id = link.getAttribute("href");
-        return id && id.startsWith("#") ? document.querySelector(id) : null;
-      })
-      .filter(Boolean);
-
-    // Smooth scrolling for non-placeholder in-page anchors
-    document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
-      if (anchor.hasAttribute("data-placeholder-link")) return;
-
-      anchor.addEventListener("click", (event) => {
-        const targetId = anchor.getAttribute("href");
-        if (!targetId || targetId === "#") return;
-
-        const targetEl = document.querySelector(targetId);
-        if (!targetEl) return;
-
-        event.preventDefault();
-        targetEl.scrollIntoView({
-          behavior: prefersReducedMotion.matches ? "auto" : "smooth",
-          block: "start",
-        });
-
-        // Update URL hash cleanly without jumping
-        if (window.history && window.history.pushState) {
-          window.history.pushState(null, "", targetId);
+    if (bgmBtn) {
+      bgmBtn.addEventListener("click", () => {
+        playBeep(650, 0.04);
+        if (bgmPlaying) {
+          stopChiptuneBGM();
+          showToast("8-Bit BGM Paused");
+        } else {
+          startChiptuneBGM();
+          showToast("8-Bit BGM Playing");
         }
       });
-    });
+    }
 
-    if (!sections.length) return;
-
-    const setActiveLink = (activeId) => {
-      navLinks.forEach((link) => {
-        const isMatch = link.getAttribute("href") === `#${activeId}`;
-        link.classList.toggle("is-active", isMatch);
-      });
-    };
-
-    const heroSection = document.getElementById("hero");
-    const observedSections = heroSection ? [heroSection, ...sections] : sections;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setActiveLink(entry.target.id === "hero" ? "" : entry.target.id);
-          }
-        });
-      },
-      {
-        rootMargin: "-35% 0px -55% 0px",
-        threshold: 0,
-      }
-    );
-
-    observedSections.forEach((section) => observer.observe(section));
-
-    // Handle edge positions: very top of page & very bottom of page (tall screens)
-    const onScrollEdge = () => {
-      if (window.scrollY < 100) {
-        setActiveLink("");
-        return;
-      }
-      const nearBottom =
-        window.innerHeight + window.scrollY >=
-        document.documentElement.scrollHeight - 24;
-      if (nearBottom) {
-        const lastSection = sections[sections.length - 1];
-        if (lastSection) setActiveLink(lastSection.id);
-      }
-    };
-
-    window.addEventListener("scroll", onScrollEdge, { passive: true });
-  }
-
-  /* ------------------------------------------------------------------------
-     5. Interactive Project Bubbles (Supports Multiple Projects)
-     ------------------------------------------------------------------------ */
-  function initProjectBubble() {
-    const items = Array.from(document.querySelectorAll("[data-project-item]"));
-    if (!items.length) return;
-
-    const setItemOpen = (item, isOpen) => {
-      const trigger = item.querySelector("[data-project-trigger]");
-      const panel = item.querySelector("[data-project-panel]");
-      if (!trigger || !panel) return;
-
-      trigger.classList.toggle("is-open", isOpen);
-      panel.classList.toggle("is-open", isOpen);
-      trigger.setAttribute("aria-expanded", String(isOpen));
-      panel.setAttribute("aria-hidden", String(!isOpen));
-    };
-
-    const closeAll = (exceptItem = null) => {
-      items.forEach((item) => {
-        if (item !== exceptItem) setItemOpen(item, false);
-      });
-    };
-
-    items.forEach((item) => {
-      const trigger = item.querySelector("[data-project-trigger]");
-      if (!trigger) return;
-
-      trigger.addEventListener("click", (event) => {
-        event.stopPropagation();
-        const currentlyOpen = trigger.classList.contains("is-open");
-        closeAll(item);
-        setItemOpen(item, !currentlyOpen);
-      });
-    });
-
-    document.addEventListener("click", (event) => {
-      const clickedInside = items.some((item) => item.contains(event.target));
-      if (!clickedInside) closeAll();
-    });
-
-    document.addEventListener("keydown", (event) => {
-      if (event.key === "Escape") {
-        const openItem = items.find((item) =>
-          item.querySelector("[data-project-trigger]")?.classList.contains("is-open")
-        );
-        if (openItem) {
-          closeAll();
-          openItem.querySelector("[data-project-trigger]")?.focus();
+    if (volSlider) {
+      volSlider.addEventListener("input", (e) => {
+        currentVol = Number(e.target.value) / 100;
+        if (masterGain && audioCtx) {
+          masterGain.gain.setValueAtTime(currentVol, audioCtx.currentTime);
         }
-      }
-    });
-  }
-
-  /* ------------------------------------------------------------------------
-     6. Placeholder Link Handler
-     ------------------------------------------------------------------------ */
-  function initPlaceholderLinks() {
-    const placeholders = document.querySelectorAll("[data-placeholder-link]");
-    placeholders.forEach((el) => {
-      el.addEventListener("click", (event) => {
-        event.preventDefault();
-        const message = el.getAttribute("data-placeholder-link") || "Link coming soon.";
-        showToast(message);
       });
-    });
-  }
-
-  /* ------------------------------------------------------------------------
-     7. Contact Form Validation & Submission Feedback
-     ------------------------------------------------------------------------ */
-  function initContactForm() {
-    const form = document.getElementById("contact-form");
-    const statusEl = document.getElementById("form-status");
-    if (!form || !statusEl) return;
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    const setStatus = (message, type) => {
-      statusEl.textContent = message;
-      statusEl.classList.remove("is-success", "is-error");
-      if (type) statusEl.classList.add(`is-${type}`);
-    };
-
-    form.addEventListener("submit", (event) => {
-      event.preventDefault();
-
-      const name = form.elements.name.value.trim();
-      const email = form.elements.email.value.trim();
-      const subject = form.elements.subject.value.trim();
-      const message = form.elements.message.value.trim();
-
-      if (!name || !email || !subject || !message) {
-        setStatus("Please fill in all fields before sending your message.", "error");
-        return;
-      }
-
-      if (!emailRegex.test(email)) {
-        setStatus("Please enter a valid email address.", "error");
-        form.elements.email.focus();
-        return;
-      }
-
-      if (message.length < 10) {
-        setStatus("Please write a short message of at least 10 characters.", "error");
-        form.elements.message.focus();
-        return;
-      }
-
-      const mailtoSubject = encodeURIComponent(`[Portfolio] ${subject}`);
-      const mailtoBody = encodeURIComponent(
-        `Name: ${name}\nEmail: ${email}\n\n${message}`
-      );
-      window.location.href = `mailto:ag8634557@gmail.com?subject=${mailtoSubject}&body=${mailtoBody}`;
-
-      setStatus(
-        `Thanks, ${name}! Your email app is opening with your message addressed to ag8634557@gmail.com.`,
-        "success"
-      );
-      showToast("Opening your email app to send the message!");
-      form.reset();
-    });
-  }
-
-  /* ------------------------------------------------------------------------
-     8. Scroll Reveal Observer (Pairs with Step 6 CSS Animations)
-     ------------------------------------------------------------------------ */
-  function initScrollReveal() {
-    const revealEls = document.querySelectorAll("[data-reveal]");
-    if (!revealEls.length) return;
-
-    if (prefersReducedMotion.matches || !("IntersectionObserver" in window)) {
-      revealEls.forEach((el) => el.classList.add("is-revealed"));
-      return;
     }
 
-    // Trigger above-the-fold hero elements smoothly after initial paint
-    const heroReveals = document.querySelectorAll("#hero [data-reveal]");
-    window.requestAnimationFrame(() => {
-      window.requestAnimationFrame(() => {
-        heroReveals.forEach((el) => el.classList.add("is-revealed"));
+    // Attach click sound to all buttons & links with .pixel-btn
+    document.querySelectorAll(".pixel-btn, .hud-link").forEach((el) => {
+      el.addEventListener("click", () => {
+        playBeep(880, 0.04, "square");
       });
-    });
-
-    const revealObserver = new IntersectionObserver(
-      (entries, observer) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("is-revealed");
-            observer.unobserve(entry.target);
-          }
-        });
-      },
-      {
-        rootMargin: "0px 0px -8% 0px",
-        threshold: 0.1,
-      }
-    );
-
-    revealEls.forEach((el) => {
-      if (!el.closest("#hero")) {
-        revealObserver.observe(el);
-      }
     });
   }
 
   /* ------------------------------------------------------------------------
-     8b. Subtle Pointer-Tracked Card Sheen (Desktop / Fine Pointer Only)
+     5. Day / Night Theme Toggle
      ------------------------------------------------------------------------ */
-  function initCardGlow() {
-    if (
-      prefersReducedMotion.matches ||
-      !window.matchMedia("(pointer: fine)").matches
-    ) {
-      return;
+  function initThemeToggle() {
+    const themeBtn = document.getElementById("theme-toggle");
+    const themeText = document.getElementById("theme-toggle-text");
+    if (!themeBtn) return;
+
+    const root = document.documentElement;
+    const current = root.getAttribute("data-theme") === "light" ? "light" : "dark";
+
+    function updateLabel(theme) {
+      if (themeText) {
+        themeText.textContent = theme === "light" ? "☀️ DAY" : "🌙 NIGHT";
+      }
     }
 
-    const glowCards = document.querySelectorAll(
-      ".skill-card, .pillar-card, .project-card"
-    );
+    updateLabel(current);
 
-    glowCards.forEach((card) => {
-      card.addEventListener("pointermove", (event) => {
-        const rect = card.getBoundingClientRect();
-        const x = ((event.clientX - rect.left) / rect.width) * 100;
-        const y = ((event.clientY - rect.top) / rect.height) * 100;
-        card.style.setProperty("--mx", `${x.toFixed(1)}%`);
-        card.style.setProperty("--my", `${y.toFixed(1)}%`);
-      });
+    themeBtn.addEventListener("click", () => {
+      playBeep(1100, 0.07, "triangle");
+      const active = root.getAttribute("data-theme") === "light" ? "light" : "dark";
+      const next = active === "light" ? "dark" : "light";
+      root.setAttribute("data-theme", next);
+      localStorage.setItem("rpg-theme", next);
+      updateLabel(next);
+      showToast(next === "light" ? "Handheld Arcade Mode" : "Dungeon Night Mode");
+      window.dispatchEvent(new CustomEvent("rpgthemechange", { detail: { theme: next } }));
     });
   }
 
   /* ------------------------------------------------------------------------
-     9. Subtle Cinematic Hero Canvas Background
+     6. Dialogue Typewriter Animation
      ------------------------------------------------------------------------ */
-  function initHeroCanvas() {
-    const canvas = document.getElementById("hero-canvas");
+  function initTypewriter() {
+    const el = document.getElementById("typewriter-text");
+    if (!el) return;
+
+    const fullText = el.textContent.trim();
+    el.textContent = "";
+    let charIdx = 0;
+    let typingTimer = null;
+
+    function typeChar() {
+      if (charIdx < fullText.length) {
+        el.textContent += fullText[charIdx];
+        charIdx += 1;
+        // Subtle blip on letters occasionally
+        if (charIdx % 4 === 0) {
+          playBeep(320, 0.02, "triangle");
+        }
+        typingTimer = setTimeout(typeChar, 24);
+      }
+    }
+
+    typeChar();
+
+    // Click on dialogue box skips to full text
+    el.closest(".dialogue-box")?.addEventListener("click", () => {
+      if (charIdx < fullText.length) {
+        clearTimeout(typingTimer);
+        el.textContent = fullText;
+        charIdx = fullText.length;
+        playBeep(600, 0.04);
+      }
+    });
+  }
+
+  /* ------------------------------------------------------------------------
+     7. Fullscreen 8-Bit Pixel Starfield Canvas
+     ------------------------------------------------------------------------ */
+  function initPixelCanvas() {
+    const canvas = document.getElementById("rpg-canvas");
     if (!canvas) return;
-
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     let width = 0;
     let height = 0;
-    let animationFrameId = null;
-    let time = 0;
     let stars = [];
-    let shooters = [];
+    let shootingPixels = [];
+    let animId = null;
 
-    const STAR_COUNT = 160;
+    const PIXEL_SCALE = 3; // Blocky pixel art star size
 
-    const createStars = () => {
-      stars = Array.from({ length: STAR_COUNT }, () => ({
-        x: Math.random() * width,
-        y: Math.random() * height,
-        r: Math.random() * 1.3 + 0.2,
-        base: Math.random() * 0.7 + 0.15,          // base opacity
-        twinkleSpeed: Math.random() * 0.025 + 0.008,
-        twinkleOffset: Math.random() * Math.PI * 2,
-        gold: Math.random() > 0.72,
+    function createStars() {
+      const count = Math.min(130, Math.floor((width * height) / 14000));
+      stars = Array.from({ length: count }, () => ({
+        x: Math.floor((Math.random() * width) / PIXEL_SCALE) * PIXEL_SCALE,
+        y: Math.floor((Math.random() * height) / PIXEL_SCALE) * PIXEL_SCALE,
+        size: Math.random() > 0.8 ? PIXEL_SCALE * 2 : PIXEL_SCALE,
+        twinkleRate: Math.random() * 0.04 + 0.015,
+        twinklePhase: Math.random() * Math.PI * 2,
+        isGold: Math.random() > 0.65,
       }));
-    };
+    }
 
-    const spawnShooter = () => {
-      const startX = Math.random() * width * 0.7 + width * 0.1;
-      const startY = Math.random() * height * 0.45;
-      const angle = Math.PI / 5 + Math.random() * Math.PI / 8; // ~36-58° downward
-      const speed = 6 + Math.random() * 5;
-      shooters.push({
-        x: startX, y: startY,
-        vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed,
-        len: 90 + Math.random() * 80,
+    function spawnShootingPixel() {
+      const startX = Math.random() * width * 0.7;
+      const startY = Math.random() * height * 0.4;
+      const speed = 4.5 + Math.random() * 3.5;
+      shootingPixels.push({
+        x: startX,
+        y: startY,
+        vx: speed,
+        vy: speed * 0.65,
+        len: 8,
         life: 1.0,
-        decay: 0.022 + Math.random() * 0.012,
+        decay: 0.025,
       });
-    };
+    }
 
-    const resize = () => {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    function resize() {
       width = window.innerWidth;
       height = window.innerHeight;
-      canvas.width = Math.floor(width * dpr);
-      canvas.height = Math.floor(height * dpr);
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      canvas.width = width;
+      canvas.height = height;
       createStars();
-    };
+    }
 
-    const drawFrame = () => {
+    let time = 0;
+    function render() {
       ctx.clearRect(0, 0, width, height);
       time += 1;
 
       const isLight = document.documentElement.getAttribute("data-theme") === "light";
 
-      // Spawn shooting star at medium rate
-      if (Math.random() < 0.006) spawnShooter();
+      // Spawn shooting stars randomly
+      if (Math.random() < 0.007) {
+        spawnShootingPixel();
+      }
 
-      // Draw stars / sunlit motes with medium-speed twinkle
+      // Draw pixel stars
       stars.forEach((s) => {
-        const opacity = Math.max(
-          0.14,
-          Math.min(1, s.base + Math.sin(time * s.twinkleSpeed + s.twinkleOffset) * 0.25)
-        );
-        const radius = isLight ? s.r * 1.45 + 0.35 : s.r;
-        ctx.beginPath();
-        ctx.arc(s.x, s.y, radius, 0, Math.PI * 2);
+        const alpha = 0.25 + Math.abs(Math.sin(time * s.twinkleRate + s.twinklePhase)) * 0.75;
         if (isLight) {
-          ctx.fillStyle = s.gold
-            ? `rgba(217, 119, 6, ${(opacity * 0.82).toFixed(3)})`
-            : `rgba(180, 118, 42, ${(opacity * 0.52).toFixed(3)})`;
-          ctx.shadowColor = `rgba(245, 158, 11, ${(opacity * 0.45).toFixed(3)})`;
-          ctx.shadowBlur = s.gold ? 6 : 2;
+          ctx.fillStyle = s.isGold
+            ? `rgba(178, 115, 0, ${alpha.toFixed(2)})`
+            : `rgba(90, 80, 65, ${(alpha * 0.45).toFixed(2)})`;
         } else {
-          ctx.fillStyle = s.gold
-            ? `rgba(235, 210, 160, ${opacity.toFixed(3)})`
-            : `rgba(220, 220, 240, ${opacity.toFixed(3)})`;
-          ctx.shadowBlur = 0;
+          ctx.fillStyle = s.isGold
+            ? `rgba(246, 196, 69, ${alpha.toFixed(2)})`
+            : `rgba(200, 215, 230, ${alpha.toFixed(2)})`;
         }
-        ctx.fill();
+        ctx.fillRect(s.x, s.y, s.size, s.size);
       });
-      ctx.shadowBlur = 0;
 
-      // Draw shooting stars / golden sun streaks
-      shooters = shooters.filter((sh) => sh.life > 0);
-      shooters.forEach((sh) => {
-        const tailX = sh.x - sh.len;
-        const tailY = sh.y - sh.len * (sh.vy / sh.vx);
-        const grad = ctx.createLinearGradient(tailX, tailY, sh.x, sh.y);
-        if (isLight) {
-          grad.addColorStop(0,   `rgba(245, 158, 11, 0)`);
-          grad.addColorStop(0.55, `rgba(217, 119, 6, ${(sh.life * 0.65).toFixed(3)})`);
-          grad.addColorStop(1,   `rgba(180, 83, 9, ${(sh.life * 0.95).toFixed(3)})`);
-        } else {
-          grad.addColorStop(0,   `rgba(235, 210, 160, 0)`);
-          grad.addColorStop(0.6, `rgba(235, 210, 160, ${(sh.life * 0.5).toFixed(3)})`);
-          grad.addColorStop(1,   `rgba(255, 245, 220, ${sh.life.toFixed(3)})`);
+      // Draw shooting pixel streaks
+      shootingPixels = shootingPixels.filter((sh) => sh.life > 0);
+      shootingPixels.forEach((sh) => {
+        for (let i = 0; i < sh.len; i += 1) {
+          const trailAlpha = (sh.life * (1 - i / sh.len)).toFixed(2);
+          const px = sh.x - sh.vx * (i * 0.4);
+          const py = sh.y - sh.vy * (i * 0.4);
+
+          ctx.fillStyle = isLight
+            ? `rgba(178, 115, 0, ${trailAlpha})`
+            : `rgba(246, 196, 69, ${trailAlpha})`;
+
+          ctx.fillRect(
+            Math.floor(px / PIXEL_SCALE) * PIXEL_SCALE,
+            Math.floor(py / PIXEL_SCALE) * PIXEL_SCALE,
+            PIXEL_SCALE,
+            PIXEL_SCALE
+          );
         }
-
-        ctx.beginPath();
-        ctx.moveTo(tailX, tailY);
-        ctx.lineTo(sh.x, sh.y);
-        ctx.strokeStyle = grad;
-        ctx.lineWidth = (isLight ? 2.2 : 1.5) * sh.life;
-        ctx.shadowColor = isLight
-          ? `rgba(245, 158, 11, ${sh.life * 0.65})`
-          : `rgba(235, 210, 160, ${sh.life * 0.6})`;
-        ctx.shadowBlur = isLight ? 8 : 6;
-        ctx.stroke();
-        ctx.shadowBlur = 0;
 
         sh.x += sh.vx;
         sh.y += sh.vy;
         sh.life -= sh.decay;
       });
-    };
 
-    const loop = () => {
-      if (document.hidden || prefersReducedMotion.matches) {
-        animationFrameId = null;
-        return;
-      }
-      drawFrame();
-      animationFrameId = window.requestAnimationFrame(loop);
-    };
-
-    const startLoop = () => {
-      if (prefersReducedMotion.matches) { drawFrame(); return; }
-      if (!animationFrameId && !document.hidden) {
-        animationFrameId = window.requestAnimationFrame(loop);
-      }
-    };
-
-    document.addEventListener("visibilitychange", () => {
-      if (!document.hidden) startLoop();
-    });
-
-    window.addEventListener("themechange", () => {
-      drawFrame();
-    });
+      animId = requestAnimationFrame(render);
+    }
 
     window.addEventListener("resize", resize);
+    window.addEventListener("rpgthemechange", () => render());
+
     resize();
-    startLoop();
+    render();
   }
 
   /* ------------------------------------------------------------------------
-     10. Ambient Background Tune + Volume Control + Smart Spotify Handoff
+     8. Mobile HUD Menu Drawer
      ------------------------------------------------------------------------ */
-  function initAmbientTune() {
-    const widgetEl = document.getElementById("sound-widget");
-    const toggleBtn = document.getElementById("sound-toggle");
-    const labelEl = document.getElementById("sound-label");
-    const volumeSlider = document.getElementById("sound-volume");
-    const spotifyCard = document.getElementById("spotify-card");
-    const spotifyIframe = document.getElementById("spotify-embed");
-    if (!widgetEl || !toggleBtn || !volumeSlider) return;
+  function initMobileMenu() {
+    const menuBtn = document.getElementById("mobile-menu-btn");
+    const drawer = document.getElementById("mobile-hud");
+    if (!menuBtn || !drawer) return;
 
-    const AudioCtx = window.AudioContext || window.webkitAudioContext;
-    if (!AudioCtx) {
-      widgetEl.style.display = "none";
-      return;
-    }
+    menuBtn.addEventListener("click", () => {
+      playBeep(700, 0.05);
+      const isOpen = drawer.classList.toggle("is-open");
+      menuBtn.setAttribute("aria-expanded", String(isOpen));
+      menuBtn.querySelector("span").textContent = isOpen ? "✕" : "☰";
+    });
 
-    let ctx = null;
-    let masterGain = null;
-    let delayNode = null;
-    let isPlaying = false;
-    let userMuted = false;
-    let pausedForSpotify = false;
-    let isHoveringSpotify = false;
-    let loopTimer = null;
-    let stepIndex = 0;
+    drawer.querySelectorAll(".mobile-hud-link").forEach((link) => {
+      link.addEventListener("click", () => {
+        drawer.classList.remove("is-open");
+        menuBtn.setAttribute("aria-expanded", "false");
+        menuBtn.querySelector("span").textContent = "☰";
+      });
+    });
+  }
 
-    // Load saved volume if available (0.0 to 1.0)
-    let volume = 0.65;
-    try {
-      const savedVol = window.localStorage.getItem("portfolio_volume");
-      if (savedVol !== null) {
-        const parsed = Number(savedVol);
-        if (!Number.isNaN(parsed) && parsed >= 0 && parsed <= 100) {
-          volume = parsed / 100;
-          volumeSlider.value = String(parsed);
-        }
-      }
-    } catch {
-      // Ignore storage errors on restricted origins
-    }
-
-    const syncSliderVisual = () => {
-      const pct = Math.round(volume * 100);
-      volumeSlider.style.setProperty("--vol", `${pct}%`);
+  /* ------------------------------------------------------------------------
+     9. Keyboard Shortcuts & Konami Code Easter Egg
+     ------------------------------------------------------------------------ */
+  function initKeyboardControls() {
+    // Keys [1]-[5] quick navigate to sections
+    const keyMap = {
+      "1": "#about",
+      "2": "#skills",
+      "3": "#projects",
+      "4": "#journey",
+      "5": "#contact",
     };
-    syncSliderVisual();
 
-    // Warm Minimal Luxury progression: Am9 -> Fmaj7 -> Cmaj7 -> G6
-    const progression = [
-      { pad: [220.0, 261.63, 329.63, 392.0], arp: [493.88, 659.25, 587.33, 523.25] },
-      { pad: [174.61, 220.0, 261.63, 329.63], arp: [440.0, 523.25, 659.25, 523.25] },
-      { pad: [130.81, 196.0, 246.94, 329.63], arp: [392.0, 493.88, 659.25, 587.33] },
-      { pad: [196.0, 246.94, 293.66, 329.63], arp: [440.0, 587.33, 493.88, 392.0] },
+    // Konami code sequence
+    const KONAMI = [
+      "ArrowUp",
+      "ArrowUp",
+      "ArrowDown",
+      "ArrowDown",
+      "ArrowLeft",
+      "ArrowRight",
+      "ArrowLeft",
+      "ArrowRight",
+      "b",
+      "a",
     ];
+    let konamiIndex = 0;
 
-    const ensureAudioGraph = () => {
-      if (ctx) return;
-      ctx = new AudioCtx();
+    window.addEventListener("keydown", (e) => {
+      // Ignore if typing inside input or textarea
+      if (["INPUT", "TEXTAREA"].includes(document.activeElement?.tagName)) return;
 
-      masterGain = ctx.createGain();
-      masterGain.gain.setValueAtTime(0.0001, ctx.currentTime);
-
-      const filter = ctx.createBiquadFilter();
-      filter.type = "lowpass";
-      filter.frequency.setValueAtTime(1150, ctx.currentTime);
-
-      delayNode = ctx.createDelay(1.0);
-      delayNode.delayTime.setValueAtTime(0.38, ctx.currentTime);
-
-      const feedback = ctx.createGain();
-      feedback.gain.setValueAtTime(0.28, ctx.currentTime);
-
-      const wetGain = ctx.createGain();
-      wetGain.gain.setValueAtTime(0.32, ctx.currentTime);
-
-      filter.connect(masterGain);
-      filter.connect(delayNode);
-      delayNode.connect(feedback);
-      feedback.connect(delayNode);
-      delayNode.connect(wetGain);
-      wetGain.connect(masterGain);
-      masterGain.connect(ctx.destination);
-
-      ctx._busFilter = filter;
-    };
-
-    const playPadChord = (freqs, startTime, duration) => {
-      freqs.forEach((freq, i) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = i % 2 === 0 ? "sine" : "triangle";
-        osc.frequency.setValueAtTime(freq, startTime);
-        osc.detune.setValueAtTime((i - 1.5) * 4, startTime);
-
-        gain.gain.setValueAtTime(0.0001, startTime);
-        gain.gain.linearRampToValueAtTime(0.045, startTime + 1.1);
-        gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
-
-        osc.connect(gain);
-        gain.connect(ctx._busFilter);
-        osc.start(startTime);
-        osc.stop(startTime + duration + 0.1);
-      });
-    };
-
-    const playBellNote = (freq, startTime) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(freq, startTime);
-
-      gain.gain.setValueAtTime(0.0001, startTime);
-      gain.gain.linearRampToValueAtTime(0.075, startTime + 0.04);
-      gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 1.8);
-
-      osc.connect(gain);
-      gain.connect(ctx._busFilter);
-      osc.start(startTime);
-      osc.stop(startTime + 1.9);
-    };
-
-    const scheduleBar = () => {
-      if (!isPlaying || !ctx) return;
-      const bar = progression[stepIndex % progression.length];
-      const now = ctx.currentTime + 0.05;
-      const barDuration = 3.6;
-
-      playPadChord(bar.pad, now, barDuration + 0.4);
-      bar.arp.forEach((note, idx) => {
-        playBellNote(note, now + idx * 0.85);
-      });
-
-      stepIndex += 1;
-      loopTimer = window.setTimeout(scheduleBar, barDuration * 1000);
-    };
-
-    const applyGain = (targetVol, rampSeconds = 0.15) => {
-      if (!ctx || !masterGain) return;
-      const now = ctx.currentTime;
-      const clamped = Math.max(0.0001, targetVol);
-      masterGain.gain.cancelScheduledValues(now);
-      masterGain.gain.setValueAtTime(Math.max(masterGain.gain.value, 0.0001), now);
-      masterGain.gain.linearRampToValueAtTime(clamped, now + rampSeconds);
-    };
-
-    const updateUI = () => {
-      const active = isPlaying && volume > 0;
-      widgetEl.classList.toggle("is-playing", active);
-      toggleBtn.setAttribute("aria-pressed", String(active));
-      toggleBtn.setAttribute(
-        "aria-label",
-        active ? "Mute ambient tune" : "Play ambient tune"
-      );
-      if (labelEl) {
-        if (active) {
-          labelEl.textContent = "On";
-        } else if (pausedForSpotify) {
-          labelEl.textContent = "Spotify";
-        } else {
-          labelEl.textContent = "Muted";
+      // Section shortcuts
+      if (keyMap[e.key]) {
+        e.preventDefault();
+        const target = document.querySelector(keyMap[e.key]);
+        if (target) {
+          playBeep(920, 0.07);
+          target.scrollIntoView({ behavior: "smooth" });
+          showToast(`NAVIGATING TO [${keyMap[e.key].replace("#", "").toUpperCase()}]`);
         }
       }
-    };
 
-    const startTune = async (silentOnBlock = false) => {
-      try {
-        ensureAudioGraph();
-        if (ctx.state === "suspended") {
-          await ctx.resume();
-        }
-        if (ctx.state !== "running") {
-          return false;
-        }
-        if (volume === 0) {
-          volume = 0.5;
-          volumeSlider.value = "50";
-          syncSliderVisual();
-        }
-        pausedForSpotify = false;
-        if (isPlaying) {
-          applyGain(volume, 0.2);
-          updateUI();
-          return true;
-        }
+      // Konami code detection
+      if (e.key.toLowerCase() === KONAMI[konamiIndex].toLowerCase()) {
+        konamiIndex += 1;
+        playBeep(450 + konamiIndex * 80, 0.05);
 
-        isPlaying = true;
-        userMuted = false;
-        applyGain(volume, 0.75);
+        if (konamiIndex === KONAMI.length) {
+          konamiIndex = 0;
+          playFanfare();
+          showToast("★ CHEAT CODE UNLOCKED: 9999 HP & INFINITE MANA! ★");
 
-        window.clearTimeout(loopTimer);
-        scheduleBar();
-        updateUI();
-        return true;
-      } catch {
-        if (!silentOnBlock) {
-          showToast("Tap the sound button to start the tune.");
+          // Temporarily boost HP & MP bars visually
+          const hpBar = document.querySelector(".hp-bar");
+          const mpBar = document.querySelector(".mp-bar");
+          const hpVal = document.querySelector(".hp-text");
+          const mpVal = document.querySelector(".mp-text");
+
+          if (hpBar) hpBar.style.boxShadow = "0 0 15px #ff5252";
+          if (mpBar) mpBar.style.boxShadow = "0 0 15px #448aff";
+          if (hpVal) hpVal.textContent = "9999 / 9999 (GOD MODE)";
+          if (mpVal) mpVal.textContent = "9999 / 9999 (INFINITE)";
         }
-        return false;
-      }
-    };
-
-    const stopTune = (byUser = true, forSpotify = false) => {
-      if (byUser) userMuted = true;
-      pausedForSpotify = forSpotify;
-      isPlaying = false;
-      window.clearTimeout(loopTimer);
-      applyGain(0.0001, 0.28);
-      updateUI();
-    };
-
-    toggleBtn.addEventListener("click", (event) => {
-      event.stopPropagation();
-      removeUnlockListeners();
-      if (isPlaying) {
-        stopTune(true, false);
       } else {
-        startTune(false);
-      }
-    });
-
-    volumeSlider.addEventListener("input", () => {
-      const pct = Number(volumeSlider.value);
-      volume = pct / 100;
-      syncSliderVisual();
-
-      try {
-        window.localStorage.setItem("portfolio_volume", String(pct));
-      } catch {
-        // Ignore storage errors
-      }
-
-      if (pct === 0) {
-        stopTune(true, false);
-      } else if (!isPlaying) {
-        removeUnlockListeners();
-        startTune(false);
-      } else {
-        applyGain(volume, 0.08);
-        updateUI();
-      }
-    });
-
-    // Smart Audio Handoff: when visitor clicks inside the Spotify embed, fade out background tune
-    if (spotifyCard) {
-      spotifyCard.addEventListener("pointerenter", () => {
-        isHoveringSpotify = true;
-      });
-      spotifyCard.addEventListener("pointerleave", () => {
-        isHoveringSpotify = false;
-      });
-    }
-
-    window.addEventListener("blur", () => {
-      const focusedSpotify =
-        spotifyIframe && document.activeElement === spotifyIframe;
-      if (focusedSpotify || isHoveringSpotify) {
-        removeUnlockListeners();
-        if (isPlaying) {
-          stopTune(true, true);
-          showToast("Switched audio to Spotify preview.");
-        } else {
-          userMuted = true;
-          pausedForSpotify = true;
-          updateUI();
-        }
-      }
-    });
-
-    // Attempt autoplay on visit; unlock on earliest user gesture outside the Spotify card
-    const unlockOnFirstGesture = async (event) => {
-      if (
-        event.target &&
-        (widgetEl.contains(event.target) ||
-          (spotifyCard && spotifyCard.contains(event.target)))
-      ) {
-        return;
-      }
-      if (userMuted || isPlaying) {
-        removeUnlockListeners();
-        return;
-      }
-      const started = await startTune(true);
-      if (started) {
-        removeUnlockListeners();
-      }
-    };
-
-    const removeUnlockListeners = () => {
-      window.removeEventListener("pointerdown", unlockOnFirstGesture);
-      window.removeEventListener("touchstart", unlockOnFirstGesture);
-      window.removeEventListener("click", unlockOnFirstGesture);
-      window.removeEventListener("keydown", unlockOnFirstGesture);
-    };
-
-    document.addEventListener("visibilitychange", () => {
-      if (document.hidden && isPlaying) {
-        stopTune(false, false);
-      } else if (!document.hidden && !userMuted && !pausedForSpotify && ctx && volume > 0) {
-        startTune(true);
-      }
-    });
-
-    updateUI();
-
-    startTune(true).then((started) => {
-      if (!started) {
-        window.addEventListener("pointerdown", unlockOnFirstGesture, { passive: true });
-        window.addEventListener("touchstart", unlockOnFirstGesture, { passive: true });
-        window.addEventListener("click", unlockOnFirstGesture, { passive: true });
-        window.addEventListener("keydown", unlockOnFirstGesture, { passive: true });
+        konamiIndex = 0;
       }
     });
   }
 
   /* ------------------------------------------------------------------------
-     11. Live Spotify Sync (Connects to /api/spotify on Vercel)
+     10. Contact Form Dispatch
      ------------------------------------------------------------------------ */
-  function initSpotifyLiveSync() {
-    // Automatically uses /api/spotify when hosted on Vercel
+  function initContactForm() {
+    const form = document.getElementById("contact-form");
+    const status = document.getElementById("form-status");
+    if (!form || !status) return;
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      playFanfare();
+
+      const name = (document.getElementById("name")?.value || "").trim();
+      const email = (document.getElementById("email")?.value || "").trim();
+      const message = (document.getElementById("message")?.value || "").trim();
+
+      status.className = "form-status is-success";
+      status.textContent = "DISPATCH TRANSMITTED! PREPARING COURIER...";
+
+      // Open mailto fallback client
+      const subject = encodeURIComponent(`[Quest Proposal] From ${name}`);
+      const body = encodeURIComponent(
+        `Adventurer: ${name}\nEmail: ${email}\n\nObjective:\n${message}`
+      );
+      window.setTimeout(() => {
+        window.location.href = `mailto:ag8634557@gmail.com?subject=${subject}&body=${body}`;
+        showToast("Opening Email Client for Alexander...");
+      }, 700);
+    });
+  }
+
+  /* ------------------------------------------------------------------------
+     11. Live Spotify Tavern Jukebox Sync
+     ------------------------------------------------------------------------ */
+  function initSpotifySync() {
     if (window.location.protocol === "file:") return;
 
     const SPOTIFY_API_URL = "/api/spotify";
-    const POLL_INTERVAL_MS = 30000;
-
-    const cardEl = document.getElementById("spotify-card");
     const statusEl = document.getElementById("spotify-status");
     const iframeEl = document.getElementById("spotify-embed");
-    if (!cardEl || !statusEl || !iframeEl) return;
+    if (!statusEl || !iframeEl) return;
 
     let currentTrackId = "4COy5i3OryqUNAJMvE6Lfv";
 
-    const syncSpotify = async () => {
+    async function sync() {
       if (document.hidden) return;
       try {
         const res = await fetch(SPOTIFY_API_URL, { cache: "no-store" });
@@ -872,7 +568,6 @@
         const data = await res.json();
         if (!data || !data.trackId) return;
 
-        cardEl.classList.toggle("is-live", Boolean(data.isPlaying));
         statusEl.textContent = data.isPlaying
           ? "Now Playing · Spotify"
           : "Recently Played · Spotify";
@@ -883,86 +578,34 @@
             data.trackId
           )}?utm_source=generator&theme=0`;
         }
-      } catch {
-        // Backend not running yet — silently keep default embedded track
-      }
-    };
+      } catch (e) {}
+    }
 
-    syncSpotify();
-    window.setInterval(syncSpotify, POLL_INTERVAL_MS);
-    document.addEventListener("visibilitychange", () => {
-      if (!document.hidden) syncSpotify();
-    });
+    sync();
+    setInterval(sync, 30000);
   }
 
   /* ------------------------------------------------------------------------
-     12. Dark / Light Mode Toggle (Persists in localStorage)
-     ------------------------------------------------------------------------ */
-  function initThemeToggle() {
-    const toggleBtn = document.getElementById("theme-toggle");
-    if (!toggleBtn) return;
-
-    const root = document.documentElement;
-    const STORAGE_KEY = "portfolio-theme";
-
-    const applyTheme = (theme, announce) => {
-      const isLight = theme === "light";
-      root.setAttribute("data-theme", isLight ? "light" : "dark");
-      toggleBtn.setAttribute("aria-pressed", String(isLight));
-      toggleBtn.setAttribute(
-        "aria-label",
-        isLight ? "Switch to moon (dark) mode" : "Switch to sun (light) mode"
-      );
-      toggleBtn.setAttribute(
-        "title",
-        isLight ? "Switch to Moon (Dark) Mode" : "Switch to Sun (Light) Mode"
-      );
-      window.dispatchEvent(new CustomEvent("themechange", { detail: { theme: isLight ? "light" : "dark" } }));
-      try {
-        localStorage.setItem(STORAGE_KEY, isLight ? "light" : "dark");
-      } catch {
-        // Ignore storage errors in restricted browsing contexts
-      }
-      if (announce) {
-        showToast(isLight ? "Sun mode enabled." : "Moon mode enabled.");
-      }
-    };
-
-    const initialTheme = root.getAttribute("data-theme") === "light" ? "light" : "dark";
-    applyTheme(initialTheme, false);
-
-    toggleBtn.addEventListener("click", () => {
-      const current = root.getAttribute("data-theme") === "light" ? "light" : "dark";
-      applyTheme(current === "light" ? "dark" : "light", true);
-    });
-  }
-
-  /* ------------------------------------------------------------------------
-     13. Dynamic Copyright Year
+     12. Dynamic Copyright Year
      ------------------------------------------------------------------------ */
   function initFooterYear() {
-    const yearEl = document.getElementById("current-year");
-    if (yearEl) {
-      yearEl.textContent = String(new Date().getFullYear());
-    }
+    const yr = document.getElementById("current-year");
+    if (yr) yr.textContent = String(new Date().getFullYear());
   }
 
   /* ------------------------------------------------------------------------
-     Initialize All Modules
+     Initialization
      ------------------------------------------------------------------------ */
   document.addEventListener("DOMContentLoaded", () => {
+    initCRTToggle();
+    initAudioControls();
     initThemeToggle();
-    initScrollChrome();
-    initMobileNav();
-    initNavigationSpy();
-    initProjectBubble();
-    initPlaceholderLinks();
+    initTypewriter();
+    initPixelCanvas();
+    initMobileMenu();
+    initKeyboardControls();
     initContactForm();
-    initScrollReveal();
-    initCardGlow();
-    initHeroCanvas();
-    initAmbientTune();
-    initSpotifyLiveSync();
+    initSpotifySync();
     initFooterYear();
   });
 })();
