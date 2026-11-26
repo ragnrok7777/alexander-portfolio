@@ -85,6 +85,71 @@
     } catch (e) {}
   }
 
+  // Play classic Mario 2-tone coin chime (B5 -> E6)
+  function playCoinChime() {
+    if (!sfxEnabled) return;
+    try {
+      initAudioContext();
+      if (!audioCtx || !masterGain) return;
+      const t = audioCtx.currentTime;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = "square";
+      osc.frequency.setValueAtTime(987.77, t);
+      osc.frequency.setValueAtTime(1318.51, t + 0.08);
+      gain.gain.setValueAtTime(0.35, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+      osc.connect(gain);
+      gain.connect(masterGain);
+      osc.start(t);
+      osc.stop(t + 0.36);
+    } catch (e) {}
+  }
+
+  /* ------------------------------------------------------------------------
+     Arcade Mini-Game State (Coin & Score Tracking)
+     ------------------------------------------------------------------------ */
+  let coinsCount = 0;
+  let totalScore = 0;
+
+  function initArcadeGameCounters() {
+    try {
+      coinsCount = parseInt(localStorage.getItem("rpg-coins") || "0", 10);
+      totalScore = parseInt(localStorage.getItem("rpg-score") || "0", 10);
+    } catch (e) {}
+    updateHudCounters();
+  }
+
+  function updateHudCounters() {
+    const coinEl = document.getElementById("hud-coin-count");
+    const scoreEl = document.getElementById("hud-score-val");
+    if (coinEl) {
+      coinEl.textContent = `x ${coinsCount < 10 ? "0" + coinsCount : coinsCount}`;
+    }
+    if (scoreEl) {
+      scoreEl.textContent = String(totalScore).padStart(6, "0");
+    }
+  }
+
+  function addCoin(points = 100) {
+    coinsCount += 1;
+    totalScore += points;
+    try {
+      localStorage.setItem("rpg-coins", coinsCount);
+      localStorage.setItem("rpg-score", totalScore);
+    } catch (e) {}
+
+    playCoinChime();
+    updateHudCounters();
+
+    const coinPill = document.querySelector(".hud-coin-pill");
+    if (coinPill) {
+      coinPill.classList.remove("coin-bump");
+      void coinPill.offsetWidth;
+      coinPill.classList.add("coin-bump");
+    }
+  }
+
   /* ------------------------------------------------------------------------
      Classic Upbeat 8-Bit Arcade / RPG Adventure Theme
      Polyphonic dual-channel: Square Wave Lead + Punchy Bass Channel
@@ -548,6 +613,7 @@
         playBeep(480, 0.08, "square");
       }
     }
+    triggerMarioJumpRef = triggerMarioJump;
 
     function resize() {
       width = window.innerWidth;
@@ -746,7 +812,7 @@
           block.bounceY = -9;
           mario.vy = 2; // Bounce head down
 
-          // Spawn Golden Coin
+          // Spawn Golden Coin & Increment Score
           activeCoins.push({
             x: block.x + block.w / 2,
             y: block.y - 10,
@@ -755,7 +821,7 @@
             rot: 0,
           });
 
-          playBeep(987, 0.1, "square"); // Coin chime!
+          addCoin(100); // Coin sound + HUD counter increment!
         }
       });
 
@@ -1024,9 +1090,117 @@
   }
 
   /* ------------------------------------------------------------------------
+     13. Neon Pixel Particle Click Sparkles
+     ------------------------------------------------------------------------ */
+  function createClickSparkles(x, y) {
+    if (!x && !y) return;
+    const colors = ["#ff2a8d", "#00f0ff", "#ffd000", "#ff6a00", "#ffffff"];
+    for (let i = 0; i < 6; i++) {
+      const p = document.createElement("div");
+      p.className = "pixel-click-sparkle";
+      const angle = (Math.PI * 2 * i) / 6 + (Math.random() * 0.4 - 0.2);
+      const dist = 18 + Math.random() * 24;
+      const dx = Math.cos(angle) * dist;
+      const dy = Math.sin(angle) * dist;
+      p.style.setProperty("--dx", `${dx}px`);
+      p.style.setProperty("--dy", `${dy}px`);
+      p.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+      p.style.left = `${x}px`;
+      p.style.top = `${y}px`;
+      document.body.appendChild(p);
+      setTimeout(() => p.remove(), 450);
+    }
+  }
+
+  function initClickSparkles() {
+    window.addEventListener("click", (e) => {
+      createClickSparkles(e.clientX, e.clientY);
+    });
+  }
+
+  /* ------------------------------------------------------------------------
+     14. Mobile [A] Arcade Jump Button
+     ------------------------------------------------------------------------ */
+  function initMobileJumpButton() {
+    const btn = document.getElementById("mobile-jump-btn");
+    if (!btn) return;
+
+    btn.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      if (typeof triggerMarioJumpRef === "function") triggerMarioJumpRef();
+      if (e.touches && e.touches[0]) {
+        createClickSparkles(e.touches[0].clientX, e.touches[0].clientY);
+      }
+    }, { passive: false });
+
+    btn.addEventListener("click", () => {
+      if (typeof triggerMarioJumpRef === "function") triggerMarioJumpRef();
+    });
+  }
+
+  /* ------------------------------------------------------------------------
+     15. Retro RPG Resume / Inventory Scroll Modal
+     ------------------------------------------------------------------------ */
+  function initResumeModal() {
+    const modal = document.getElementById("resume-modal");
+    const openBtn = document.getElementById("resume-open-btn");
+    const closeBtn = document.getElementById("resume-modal-close");
+    const copyBtn = document.getElementById("copy-email-btn");
+    const emailEl = document.getElementById("copyable-email");
+    if (!modal) return;
+
+    function openModal() {
+      modal.classList.add("is-open");
+      modal.setAttribute("aria-hidden", "false");
+      playBeep(780, 0.08, "square");
+      document.body.style.overflow = "hidden";
+    }
+
+    function closeModal() {
+      modal.classList.remove("is-open");
+      modal.setAttribute("aria-hidden", "true");
+      playBeep(420, 0.08, "square");
+      document.body.style.overflow = "";
+    }
+
+    if (openBtn) openBtn.addEventListener("click", openModal);
+    if (closeBtn) closeBtn.addEventListener("click", closeModal);
+
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) closeModal();
+    });
+
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && modal.classList.contains("is-open")) {
+        closeModal();
+      }
+    });
+
+    if (copyBtn && emailEl) {
+      copyBtn.addEventListener("click", () => {
+        const email = emailEl.textContent || "ag8634557@gmail.com";
+        navigator.clipboard.writeText(email).then(() => {
+          playFanfare();
+          const origText = copyBtn.innerHTML;
+          copyBtn.innerHTML = "<span>✔ COPIED TO CLIPBOARD!</span>";
+          setTimeout(() => {
+            copyBtn.innerHTML = origText;
+          }, 2000);
+        }).catch(() => {
+          window.location.href = `mailto:${email}`;
+        });
+      });
+    }
+  }
+
+  /* ------------------------------------------------------------------------
      Initialization
      ------------------------------------------------------------------------ */
   document.addEventListener("DOMContentLoaded", () => {
+    initArcadeGameCounters();
+    initClickSparkles();
+    initMobileJumpButton();
+    initResumeModal();
     initCRTToggle();
     initAudioControls();
     initThemeToggle();
