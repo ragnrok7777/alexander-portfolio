@@ -17,7 +17,7 @@
   let sfxEnabled = true;
   let bgmPlaying = false;
   let bgmIntervalId = null;
-  let currentVol = 0.4;
+  let currentVol = 0.75; // Louder, punchier arcade volume
 
   function initAudioContext() {
     if (!audioCtx) {
@@ -46,7 +46,7 @@
       osc.type = type;
       osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
 
-      gain.gain.setValueAtTime(0.18, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.28, audioCtx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
 
       osc.connect(gain);
@@ -73,7 +73,7 @@
         osc.type = "square";
         osc.frequency.setValueAtTime(freq, startTime);
 
-        gain.gain.setValueAtTime(0.2, startTime);
+        gain.gain.setValueAtTime(0.32, startTime);
         gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.18);
 
         osc.connect(gain);
@@ -85,23 +85,67 @@
     } catch (e) {}
   }
 
-  // 8-Bit Chiptune Ambient BGM Sequence
-  const CHIPTUNE_MELODY = [
-    { note: 329.63, len: 0.16 }, // E4
-    { note: 392.00, len: 0.16 }, // G4
-    { note: 493.88, len: 0.16 }, // B4
-    { note: 587.33, len: 0.22 }, // D5
-    { note: 493.88, len: 0.16 }, // B4
-    { note: 392.00, len: 0.16 }, // G4
-    { note: 440.00, len: 0.26 }, // A4
-    { note: 329.63, len: 0.16 }, // E4
-    { note: 349.23, len: 0.16 }, // F4
-    { note: 440.00, len: 0.16 }, // A4
-    { note: 523.25, len: 0.22 }, // C5
-    { note: 392.00, len: 0.32 }, // G4
+  /* ------------------------------------------------------------------------
+     Classic Upbeat 8-Bit Arcade / RPG Adventure Theme
+     Polyphonic dual-channel: Square Wave Lead + Punchy Bass Channel
+     ------------------------------------------------------------------------ */
+  // Frequency reference constants
+  const NOTE = {
+    C3: 130.81, D3: 146.83, E3: 164.81, F3: 174.61, G3: 196.00, A3: 220.00, B3: 246.94,
+    C4: 261.63, D4: 293.66, E4: 329.63, F4: 349.23, G4: 392.00, A4: 440.00, B4: 493.88,
+    C5: 523.25, D5: 587.33, E5: 659.25, F5: 698.46, G5: 783.99, A5: 880.00, B5: 987.77,
+    C6: 1046.50, REST: 0
+  };
+
+  // Upbeat, heroic 8-bit adventure soundtrack pattern (Lead + Bass in sync)
+  const ARCADE_SCORE = [
+    // Phrase 1: The Adventure Begins!
+    { lead: NOTE.E5, bass: NOTE.C3, len: 0.14 },
+    { lead: NOTE.E5, bass: NOTE.G3, len: 0.14 },
+    { lead: NOTE.REST, bass: NOTE.REST, len: 0.08 },
+    { lead: NOTE.E5, bass: NOTE.C3, len: 0.14 },
+    { lead: NOTE.REST, bass: NOTE.REST, len: 0.08 },
+    { lead: NOTE.C5, bass: NOTE.G3, len: 0.14 },
+    { lead: NOTE.E5, bass: NOTE.C3, len: 0.16 },
+    { lead: NOTE.G5, bass: NOTE.G3, len: 0.28 },
+    { lead: NOTE.REST, bass: NOTE.REST, len: 0.12 },
+    { lead: NOTE.G4, bass: NOTE.G3, len: 0.24 },
+    { lead: NOTE.REST, bass: NOTE.REST, len: 0.12 },
+
+    // Phrase 2: Hero's Stride
+    { lead: NOTE.C5, bass: NOTE.A3, len: 0.20 },
+    { lead: NOTE.G4, bass: NOTE.E3, len: 0.16 },
+    { lead: NOTE.E4, bass: NOTE.A3, len: 0.18 },
+    { lead: NOTE.A4, bass: NOTE.F3, len: 0.18 },
+    { lead: NOTE.B4, bass: NOTE.C3, len: 0.18 },
+    { lead: NOTE.A4, bass: NOTE.F3, len: 0.14 },
+    { lead: NOTE.G4, bass: NOTE.G3, len: 0.22 },
+
+    // Phrase 3: Rising Fanfare
+    { lead: NOTE.E5, bass: NOTE.C3, len: 0.15 },
+    { lead: NOTE.G5, bass: NOTE.G3, len: 0.15 },
+    { lead: NOTE.A5, bass: NOTE.A3, len: 0.22 },
+    { lead: NOTE.F5, bass: NOTE.F3, len: 0.15 },
+    { lead: NOTE.G5, bass: NOTE.C3, len: 0.18 },
+    { lead: NOTE.E5, bass: NOTE.G3, len: 0.16 },
+    { lead: NOTE.C5, bass: NOTE.A3, len: 0.15 },
+    { lead: NOTE.D5, bass: NOTE.F3, len: 0.15 },
+    { lead: NOTE.B4, bass: NOTE.G3, len: 0.28 },
+    { lead: NOTE.REST, bass: NOTE.REST, len: 0.14 },
+
+    // Phrase 4: Victory Loop Arpeggio
+    { lead: NOTE.G5, bass: NOTE.C3, len: 0.12 },
+    { lead: NOTE.F5, bass: NOTE.G3, len: 0.12 },
+    { lead: NOTE.D5, bass: NOTE.A3, len: 0.14 },
+    { lead: NOTE.E5, bass: NOTE.C3, len: 0.18 },
+    { lead: NOTE.C5, bass: NOTE.F3, len: 0.16 },
+    { lead: NOTE.D5, bass: NOTE.G3, len: 0.18 },
+    { lead: NOTE.C5, bass: NOTE.C3, len: 0.32 },
+    { lead: NOTE.REST, bass: NOTE.REST, len: 0.18 },
   ];
 
-  let melodyIndex = 0;
+  let scoreIndex = 0;
+
   function startChiptuneBGM() {
     if (bgmPlaying) return;
     initAudioContext();
@@ -110,27 +154,52 @@
 
     function step() {
       if (!bgmPlaying || !audioCtx || !masterGain) return;
-      const item = CHIPTUNE_MELODY[melodyIndex];
-      melodyIndex = (melodyIndex + 1) % CHIPTUNE_MELODY.length;
+      const beat = ARCADE_SCORE[scoreIndex];
+      scoreIndex = (scoreIndex + 1) % ARCADE_SCORE.length;
+
+      const now = audioCtx.currentTime;
+      const playDur = beat.len * 0.88;
 
       try {
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
+        // Channel 1: Lead Melody (Authentic Punchy 8-bit Square Wave)
+        if (beat.lead && beat.lead > 0) {
+          const leadOsc = audioCtx.createOscillator();
+          const leadGain = audioCtx.createGain();
 
-        osc.type = "triangle"; // softer pulse tone for background
-        osc.frequency.setValueAtTime(item.note, audioCtx.currentTime);
+          leadOsc.type = "square";
+          leadOsc.frequency.setValueAtTime(beat.lead, now);
 
-        gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + item.len * 0.9);
+          // Loud punchy attack with 8-bit staccato decay
+          leadGain.gain.setValueAtTime(0.24, now);
+          leadGain.gain.exponentialRampToValueAtTime(0.001, now + playDur);
 
-        osc.connect(gain);
-        gain.connect(masterGain);
+          leadOsc.connect(leadGain);
+          leadGain.connect(masterGain);
 
-        osc.start();
-        osc.stop(audioCtx.currentTime + item.len);
+          leadOsc.start(now);
+          leadOsc.stop(now + playDur);
+        }
+
+        // Channel 2: Rhythmic Pulse Bass (Provides the retro gaming groove)
+        if (beat.bass && beat.bass > 0) {
+          const bassOsc = audioCtx.createOscillator();
+          const bassGain = audioCtx.createGain();
+
+          bassOsc.type = "square";
+          bassOsc.frequency.setValueAtTime(beat.bass, now);
+
+          bassGain.gain.setValueAtTime(0.18, now);
+          bassGain.gain.exponentialRampToValueAtTime(0.001, now + playDur);
+
+          bassOsc.connect(bassGain);
+          bassGain.connect(masterGain);
+
+          bassOsc.start(now);
+          bassOsc.stop(now + playDur);
+        }
       } catch (e) {}
 
-      bgmIntervalId = window.setTimeout(step, item.len * 1000 + 40);
+      bgmIntervalId = window.setTimeout(step, beat.len * 1000);
     }
 
     step();
