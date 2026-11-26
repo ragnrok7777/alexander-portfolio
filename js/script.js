@@ -566,9 +566,9 @@
       createBlocks();
     }
 
-    // Draw an authentic 8-bit cloud with pixel blocks
+    // Draw an authentic 8-bit cloud with pixel blocks (GTA VI Dusk Tint)
     function drawPixelCloud(cx, cy, s) {
-      ctx.fillStyle = "rgba(255, 255, 255, 0.18)";
+      ctx.fillStyle = "rgba(255, 42, 141, 0.14)";
       const p = s;
       // Cloud shape
       ctx.fillRect(cx, cy, p * 8, p * 4);
@@ -666,22 +666,22 @@
         spawnShootingPixel();
       }
 
-      // 3. Draw Stars
+      // 3. Draw Stars (GTA VI Neon Pink & Vice Cyan)
       stars.forEach((s) => {
         const alpha = 0.25 + Math.abs(Math.sin(time * s.twinkleRate + s.twinklePhase)) * 0.75;
         if (isLight) {
           ctx.fillStyle = s.isGold
-            ? `rgba(178, 115, 0, ${alpha.toFixed(2)})`
-            : `rgba(90, 80, 65, ${(alpha * 0.45).toFixed(2)})`;
+            ? `rgba(217, 0, 108, ${alpha.toFixed(2)})`
+            : `rgba(0, 139, 163, ${(alpha * 0.5).toFixed(2)})`;
         } else {
           ctx.fillStyle = s.isGold
-            ? `rgba(246, 196, 69, ${alpha.toFixed(2)})`
-            : `rgba(200, 215, 230, ${alpha.toFixed(2)})`;
+            ? `rgba(255, 42, 141, ${alpha.toFixed(2)})`
+            : `rgba(0, 240, 255, ${(alpha * 0.85).toFixed(2)})`;
         }
         ctx.fillRect(s.x, s.y, s.size, s.size);
       });
 
-      // 4. Draw Shooting Pixel Comets
+      // 4. Draw Shooting Pixel Comets (GTA VI Sunset Glow)
       shootingPixels = shootingPixels.filter((sh) => sh.life > 0);
       shootingPixels.forEach((sh) => {
         for (let i = 0; i < sh.len; i += 1) {
@@ -690,8 +690,8 @@
           const py = sh.y - sh.vy * (i * 0.4);
 
           ctx.fillStyle = isLight
-            ? `rgba(178, 115, 0, ${trailAlpha})`
-            : `rgba(246, 196, 69, ${trailAlpha})`;
+            ? `rgba(217, 0, 108, ${trailAlpha})`
+            : `rgba(255, 42, 141, ${trailAlpha})`;
 
           ctx.fillRect(
             Math.floor(px / PIXEL_SCALE) * PIXEL_SCALE,
@@ -706,20 +706,20 @@
         sh.life -= sh.decay;
       });
 
-      // 5. Draw 8-Bit Ground Terrain Along Bottom
+      // 5. Draw 8-Bit Ground Terrain Along Bottom (Vice City Purple Bricks)
       const groundH = 24;
       const groundY = height - groundH;
 
-      ctx.fillStyle = isLight ? "#d48806" : "#b8621b"; // Brick surface
+      ctx.fillStyle = isLight ? "#9c428a" : "#49156e"; // Brick surface
       ctx.fillRect(0, groundY, width, groundH);
 
-      ctx.fillStyle = isLight ? "#995a00" : "#743508"; // Brick mortar line
-      ctx.fillRect(0, groundY, width, 4);
+      ctx.fillStyle = isLight ? "#d9006c" : "#ff2a8d"; // Neon pink mortar line
+      ctx.fillRect(0, groundY, width, 3);
 
       // Checkered brick vertical notches
-      ctx.fillStyle = isLight ? "#7a4300" : "#4e2103";
+      ctx.fillStyle = isLight ? "#5c1b50" : "#28083e";
       for (let bx = 0; bx < width; bx += 32) {
-        ctx.fillRect(bx, groundY + 4, 3, groundH - 4);
+        ctx.fillRect(bx, groundY + 3, 3, groundH - 3);
       }
 
       // 6. Update & Draw Mystery [?] Blocks

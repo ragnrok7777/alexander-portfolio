@@ -1,42 +1,51 @@
 /* ==========================================================================
-   ALEXANDER // RETRO PIXEL RPG & ARCADE STYLESHEET
-   Aesthetic: 8-Bit / 16-Bit Retro RPG & Cyber Arcade
+   ALEXANDER // GTA VI VICE CITY SUNSET & RETRO ARCADE STYLESHEET
+   Aesthetic: GTA VI Neon Pink, Sunset Orange, Vice Cyan & Leonida Violet
    ========================================================================== */
 
 /* --------------------------------------------------------------------------
-   1. Design Tokens & Color Palettes
+   1. Design Tokens & GTA VI Color Palettes
    -------------------------------------------------------------------------- */
 :root {
-  /* Dark Dungeon Palette (Default) */
-  --rpg-bg: #090c10;
-  --rpg-bg-alt: #0d1117;
-  --rpg-surface: #131720;
-  --rpg-surface-hover: #1c222e;
-  --rpg-glass: rgba(13, 17, 23, 0.94);
+  /* GTA VI Vice City Midnight Palette (Default) */
+  --rpg-bg: #0a0414;
+  --rpg-bg-alt: #120722;
+  --rpg-surface: #180b2d;
+  --rpg-surface-hover: #261245;
+  --rpg-glass: rgba(12, 5, 22, 0.94);
 
-  /* Primary Accent & Gold Coin */
-  --rpg-gold: #f6c445;
-  --rpg-gold-light: #ffdc73;
-  --rpg-gold-dim: rgba(246, 196, 69, 0.16);
-  --rpg-gold-border: #d49f2a;
+  /* GTA VI Signature Sunset & Neon Accents */
+  --gta-pink: #ff2a8d;
+  --gta-pink-glow: rgba(255, 42, 141, 0.45);
+  --gta-orange: #ff6a00;
+  --gta-yellow: #ffd000;
+  --gta-cyan: #00f0ff;
+  --gta-cyan-glow: rgba(0, 240, 255, 0.45);
+  --gta-purple: #bd00ff;
 
-  /* RPG Status Colors */
-  --rpg-hp: #ff5252;
-  --rpg-hp-bg: rgba(255, 82, 82, 0.22);
-  --rpg-mp: #448aff;
-  --rpg-mp-bg: rgba(68, 138, 255, 0.22);
-  --rpg-exp: #4caf50;
-  --rpg-exp-bg: rgba(76, 175, 80, 0.22);
-  --rpg-purple: #b388ff;
+  /* Primary Accent Mappings */
+  --rpg-gold: #ff2a8d;
+  --rpg-gold-light: #ff6bb3;
+  --rpg-gold-dim: rgba(255, 42, 141, 0.16);
+  --rpg-gold-border: #ff2a8d;
+
+  /* RPG Status Colors (GTA VI Themed) */
+  --rpg-hp: #ff1774;
+  --rpg-hp-bg: rgba(255, 23, 116, 0.22);
+  --rpg-mp: #00f0ff;
+  --rpg-mp-bg: rgba(0, 240, 255, 0.22);
+  --rpg-exp: #ff9900;
+  --rpg-exp-bg: rgba(255, 153, 0, 0.22);
+  --rpg-purple: #c084fc;
 
   /* Text Levels */
-  --text-main: #f0f6fc;
-  --text-muted: #8b949e;
-  --text-dim: #6e7681;
+  --text-main: #fff4f9;
+  --text-muted: #c4b3cf;
+  --text-dim: #8b7599;
 
   /* Pixel Border Outlines */
-  --pixel-border-color: #30363d;
-  --pixel-highlight: rgba(246, 196, 69, 0.45);
+  --pixel-border-color: #511b7d;
+  --pixel-highlight: rgba(255, 42, 141, 0.55);
 
   /* Typography */
   --font-pixel: "Press Start 2P", monospace;
@@ -50,33 +59,38 @@
   --gutter: 20px;
 }
 
-/* Light Handheld / Retro Arcade Theme */
+/* Light Handheld / Miami Vice Day Theme */
 html[data-theme="light"] {
-  --rpg-bg: #f5eedc;
-  --rpg-bg-alt: #eae0c8;
+  --rpg-bg: #f8eef4;
+  --rpg-bg-alt: #f0deec;
   --rpg-surface: #ffffff;
-  --rpg-surface-hover: #fff9ed;
-  --rpg-glass: rgba(245, 238, 220, 0.96);
+  --rpg-surface-hover: #fff3f9;
+  --rpg-glass: rgba(248, 238, 244, 0.96);
 
-  --rpg-gold: #b27300;
-  --rpg-gold-light: #945f00;
-  --rpg-gold-dim: rgba(178, 115, 0, 0.14);
-  --rpg-gold-border: #8b5a00;
+  --gta-pink: #d9006c;
+  --gta-orange: #d94b00;
+  --gta-yellow: #b58900;
+  --gta-cyan: #008ba3;
 
-  --rpg-hp: #d32f2f;
-  --rpg-hp-bg: rgba(211, 47, 47, 0.15);
-  --rpg-mp: #1976d2;
-  --rpg-mp-bg: rgba(25, 118, 210, 0.15);
-  --rpg-exp: #2e7d32;
-  --rpg-exp-bg: rgba(46, 125, 50, 0.15);
+  --rpg-gold: #d9006c;
+  --rpg-gold-light: #ba005c;
+  --rpg-gold-dim: rgba(217, 0, 108, 0.12);
+  --rpg-gold-border: #d9006c;
+
+  --rpg-hp: #c2185b;
+  --rpg-hp-bg: rgba(194, 24, 91, 0.15);
+  --rpg-mp: #008ba3;
+  --rpg-mp-bg: rgba(0, 139, 163, 0.15);
+  --rpg-exp: #d94b00;
+  --rpg-exp-bg: rgba(217, 75, 0, 0.15);
   --rpg-purple: #7b1fa2;
 
-  --text-main: #212529;
-  --text-muted: #495057;
-  --text-dim: #6c757d;
+  --text-main: #1e0f29;
+  --text-muted: #4e385c;
+  --text-dim: #79608a;
 
-  --pixel-border-color: #baa78e;
-  --pixel-highlight: rgba(178, 115, 0, 0.35);
+  --pixel-border-color: #d1b4dc;
+  --pixel-highlight: rgba(217, 0, 108, 0.35);
 }
 
 /* --------------------------------------------------------------------------
@@ -169,8 +183,9 @@ body.crt-enabled .crt-overlay {
 .section-sub {
   font-family: var(--font-pixel);
   font-size: 0.65rem;
-  letter-spacing: 0.12em;
-  color: var(--rpg-gold);
+  letter-spacing: 0.14em;
+  color: var(--gta-cyan);
+  text-shadow: 0 0 8px var(--gta-cyan-glow);
   display: block;
   margin-bottom: 8px;
 }
@@ -179,24 +194,30 @@ body.crt-enabled .crt-overlay {
   font-family: var(--font-pixel);
   font-size: clamp(1rem, 3.2vw, 1.45rem);
   letter-spacing: -0.02em;
-  color: var(--text-main);
-  text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.8);
+  background: linear-gradient(180deg, #ff2a8d 15%, #ff7300 55%, #ffd000 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(2px 2px 0px rgba(0, 0, 0, 0.9));
 }
 
-/* Authentic Pixel Card Frame (Layered Pixel Corners) */
+/* Authentic Pixel Card Frame (GTA VI Vice Neon Borders) */
 .pixel-box {
   background-color: var(--rpg-surface);
   border: 3px solid var(--pixel-border-color);
   box-shadow:
-    inset -3px -3px 0px 0px rgba(0, 0, 0, 0.5),
-    inset 3px 3px 0px 0px rgba(255, 255, 255, 0.08),
-    0 8px 0px 0px rgba(0, 0, 0, 0.35);
+    inset -3px -3px 0px 0px rgba(0, 0, 0, 0.6),
+    inset 3px 3px 0px 0px rgba(255, 42, 141, 0.12),
+    0 8px 24px rgba(10, 4, 20, 0.65);
   position: relative;
-  transition: transform 0.15s ease, border-color 0.15s ease;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .pixel-box:hover {
-  border-color: var(--rpg-gold);
+  border-color: var(--gta-pink);
+  box-shadow:
+    inset -3px -3px 0px 0px rgba(0, 0, 0, 0.6),
+    inset 3px 3px 0px 0px rgba(255, 42, 141, 0.24),
+    0 8px 28px rgba(255, 42, 141, 0.25);
 }
 
 .pixel-box-header {
@@ -210,7 +231,8 @@ body.crt-enabled .crt-overlay {
   font-family: var(--font-pixel);
   font-size: 0.62rem;
   letter-spacing: 0.08em;
-  color: var(--rpg-gold);
+  color: var(--gta-pink);
+  text-shadow: 0 0 8px var(--gta-pink-glow);
 }
 
 .box-title {
@@ -222,7 +244,7 @@ body.crt-enabled .crt-overlay {
 }
 
 /* --------------------------------------------------------------------------
-   6. Pixel Buttons & Controls
+   6. Pixel Buttons & Controls (GTA VI Sunset Glow)
    -------------------------------------------------------------------------- */
 .pixel-btn {
   display: inline-flex;
@@ -237,43 +259,49 @@ body.crt-enabled .crt-overlay {
   border: 2px solid var(--pixel-border-color);
   box-shadow:
     inset -2px -2px 0px 0px rgba(0, 0, 0, 0.6),
-    inset 2px 2px 0px 0px rgba(255, 255, 255, 0.15),
-    0 4px 0px 0px rgba(0, 0, 0, 0.4);
+    inset 2px 2px 0px 0px rgba(255, 42, 141, 0.15),
+    0 4px 0px 0px rgba(0, 0, 0, 0.5);
   cursor: pointer;
   text-decoration: none;
   text-transform: uppercase;
   user-select: none;
-  transition: background-color 0.1s, transform 0.05s, box-shadow 0.05s;
+  transition: background-color 0.1s, border-color 0.1s, transform 0.05s, box-shadow 0.1s, color 0.1s;
 }
 
 .pixel-btn:hover {
   background-color: var(--rpg-surface-hover);
-  border-color: var(--rpg-gold);
-  color: var(--rpg-gold);
+  border-color: var(--gta-pink);
+  color: var(--gta-cyan);
+  text-shadow: 0 0 8px var(--gta-cyan-glow);
+  box-shadow:
+    inset -2px -2px 0px 0px rgba(0, 0, 0, 0.6),
+    inset 2px 2px 0px 0px rgba(255, 42, 141, 0.25),
+    0 4px 14px var(--gta-pink-glow);
 }
 
 .pixel-btn:active {
   transform: translateY(3px);
   box-shadow:
     inset -1px -1px 0px 0px rgba(0, 0, 0, 0.6),
-    inset 1px 1px 0px 0px rgba(255, 255, 255, 0.15),
+    inset 1px 1px 0px 0px rgba(255, 42, 141, 0.15),
     0 1px 0px 0px rgba(0, 0, 0, 0.4);
 }
 
 .pixel-btn-primary {
-  background-color: #c98e14;
-  color: #090c10;
-  border-color: var(--rpg-gold);
+  background: linear-gradient(135deg, #ff2a8d 0%, #ff6a00 55%, #ffd000 100%);
+  color: #0c0414;
+  border-color: #ffd000;
   box-shadow:
-    inset -2px -2px 0px 0px #805b0d,
-    inset 2px 2px 0px 0px #ffea9f,
-    0 4px 0px 0px rgba(0, 0, 0, 0.5);
+    inset -2px -2px 0px 0px #9e004a,
+    inset 2px 2px 0px 0px #ffe599,
+    0 4px 16px rgba(255, 42, 141, 0.45);
   font-weight: bold;
 }
 
 .pixel-btn-primary:hover {
-  background-color: var(--rpg-gold-light);
-  color: #090c10;
+  background: linear-gradient(135deg, #ff4fa2 0%, #ff852e 55%, #ffe04d 100%);
+  color: #0c0414;
+  box-shadow: 0 4px 22px rgba(255, 42, 141, 0.65);
 }
 
 .pixel-btn-sm {
@@ -296,13 +324,32 @@ body.crt-enabled .crt-overlay {
   border: 1px solid currentColor;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  background-color: rgba(0, 0, 0, 0.3);
+  background-color: rgba(14, 5, 24, 0.6);
 }
 
-.tag-gold { color: var(--rpg-gold); border-color: var(--rpg-gold); }
-.tag-green { color: var(--rpg-exp); border-color: var(--rpg-exp); }
-.tag-blue { color: var(--rpg-mp); border-color: var(--rpg-mp); }
-.tag-purple { color: var(--rpg-purple); border-color: var(--rpg-purple); }
+.tag-gold {
+  color: var(--gta-pink);
+  border-color: var(--gta-pink);
+  text-shadow: 0 0 6px var(--gta-pink-glow);
+}
+
+.tag-green {
+  color: #05ffa1;
+  border-color: #05ffa1;
+  text-shadow: 0 0 6px rgba(5, 255, 161, 0.45);
+}
+
+.tag-blue {
+  color: var(--gta-cyan);
+  border-color: var(--gta-cyan);
+  text-shadow: 0 0 6px var(--gta-cyan-glow);
+}
+
+.tag-purple {
+  color: var(--rpg-purple);
+  border-color: var(--rpg-purple);
+  text-shadow: 0 0 6px rgba(192, 132, 252, 0.45);
+}
 
 .live-pulse {
   animation: pulseBlink 1.4s infinite;
@@ -326,7 +373,8 @@ body.crt-enabled .crt-overlay {
   background-color: var(--rpg-glass);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  border-bottom: 3px solid var(--pixel-border-color);
+  border-bottom: 3px solid var(--gta-pink);
+  box-shadow: 0 4px 20px rgba(255, 42, 141, 0.28);
 }
 
 .hud-inner {
@@ -359,7 +407,10 @@ body.crt-enabled .crt-overlay {
 .hud-player-name {
   font-family: var(--font-pixel);
   font-size: 0.76rem;
-  color: var(--rpg-gold);
+  background: linear-gradient(180deg, #ff2a8d 10%, #ff7300 55%, #ffd000 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(1px 1px 0px rgba(0, 0, 0, 0.9));
 }
 
 .hud-player-class {
@@ -512,8 +563,8 @@ body.crt-enabled .crt-overlay {
   display: grid;
   place-items: center;
   background-color: var(--rpg-bg-alt);
-  border: 3px solid var(--rpg-gold);
-  box-shadow: inset 0 0 10px rgba(246, 196, 69, 0.35);
+  border: 3px solid var(--gta-pink);
+  box-shadow: 0 0 16px rgba(255, 42, 141, 0.4), inset 0 0 10px rgba(255, 42, 141, 0.35);
   font-size: 2.2rem;
   flex-shrink: 0;
 }
@@ -527,7 +578,10 @@ body.crt-enabled .crt-overlay {
 .player-name {
   font-family: var(--font-pixel);
   font-size: clamp(0.9rem, 2.8vw, 1.3rem);
-  color: var(--rpg-gold);
+  background: linear-gradient(180deg, #ff2a8d 10%, #ff7300 55%, #ffd000 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(2px 2px 0px rgba(0, 0, 0, 0.95));
   letter-spacing: -0.01em;
 }
 
@@ -584,9 +638,9 @@ body.crt-enabled .crt-overlay {
   transition: width 0.6s ease;
 }
 
-.hp-bar { background: linear-gradient(90deg, #d32f2f, var(--rpg-hp)); }
-.mp-bar { background: linear-gradient(90deg, #1976d2, var(--rpg-mp)); }
-.exp-bar { background: linear-gradient(90deg, #388e3c, var(--rpg-exp)); }
+.hp-bar { background: linear-gradient(90deg, #ff0055, var(--rpg-hp)); box-shadow: 0 0 10px rgba(255, 23, 116, 0.5); }
+.mp-bar { background: linear-gradient(90deg, #0099ff, var(--rpg-mp)); box-shadow: 0 0 10px rgba(0, 240, 255, 0.5); }
+.exp-bar { background: linear-gradient(90deg, #ff5400, var(--rpg-exp)); box-shadow: 0 0 10px rgba(255, 153, 0, 0.5); }
 
 /* Dialogue Box */
 .dialogue-box {
@@ -789,7 +843,7 @@ body.crt-enabled .crt-overlay {
 .spell-rank {
   font-family: var(--font-screen);
   font-size: 0.62rem;
-  color: var(--rpg-gold);
+  color: var(--gta-cyan);
 }
 
 .spell-meter-track {
@@ -800,7 +854,7 @@ body.crt-enabled .crt-overlay {
 
 .spell-meter-fill {
   height: 100%;
-  background: linear-gradient(90deg, #c98e14, var(--rpg-gold));
+  background: linear-gradient(90deg, #ff2a8d, #ff7300, #ffd000);
 }
 
 /* --------------------------------------------------------------------------
@@ -821,8 +875,8 @@ body.crt-enabled .crt-overlay {
 
 .quest-screen-frame {
   background-color: var(--rpg-bg-alt);
-  border: 3px solid var(--rpg-gold);
-  box-shadow: inset 0 0 16px rgba(246, 196, 69, 0.2);
+  border: 3px solid var(--gta-pink);
+  box-shadow: inset 0 0 20px rgba(255, 42, 141, 0.3), 0 0 16px rgba(255, 42, 141, 0.25);
   min-height: 160px;
   display: grid;
   place-items: center;
@@ -836,10 +890,10 @@ body.crt-enabled .crt-overlay {
   left: 8px;
   font-family: var(--font-pixel);
   font-size: 0.52rem;
-  color: var(--rpg-exp);
-  background-color: rgba(0, 0, 0, 0.7);
+  color: var(--gta-cyan);
+  background-color: rgba(12, 5, 24, 0.85);
   padding: 3px 6px;
-  border: 1px solid var(--rpg-exp);
+  border: 1px solid var(--gta-cyan);
 }
 
 .quest-art-placeholder {
@@ -857,7 +911,7 @@ body.crt-enabled .crt-overlay {
 .quest-art-caption {
   font-family: var(--font-pixel);
   font-size: 0.65rem;
-  color: var(--rpg-gold);
+  color: var(--gta-cyan);
   letter-spacing: 0.1em;
 }
 
@@ -877,7 +931,10 @@ body.crt-enabled .crt-overlay {
 .quest-title {
   font-family: var(--font-pixel);
   font-size: clamp(0.85rem, 2.5vw, 1.15rem);
-  color: var(--rpg-gold);
+  background: linear-gradient(180deg, #ff2a8d 10%, #ff7300 55%, #ffd000 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(2px 2px 0px rgba(0, 0, 0, 0.9));
   line-height: 1.4;
 }
 
@@ -986,7 +1043,10 @@ body.crt-enabled .crt-overlay {
 .stage-title {
   font-family: var(--font-pixel);
   font-size: 0.76rem;
-  color: var(--rpg-gold);
+  background: linear-gradient(180deg, #ff2a8d 10%, #ff7300 55%, #ffd000 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(1px 1px 0px rgba(0, 0, 0, 0.9));
   margin-bottom: 8px;
 }
 
