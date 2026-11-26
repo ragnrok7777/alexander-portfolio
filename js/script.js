@@ -378,7 +378,7 @@
   }
 
   /* ------------------------------------------------------------------------
-     7. Fullscreen 8-Bit Pixel Starfield Canvas
+     7. Fullscreen 8-Bit Pixel Starfield & Animated Mario Runner Canvas
      ------------------------------------------------------------------------ */
   function initPixelCanvas() {
     const canvas = document.getElementById("rpg-canvas");
@@ -390,26 +390,146 @@
     let height = 0;
     let stars = [];
     let shootingPixels = [];
+    let clouds = [];
+    let mysteryBlocks = [];
+    let activeCoins = [];
     let animId = null;
 
-    const PIXEL_SCALE = 3; // Blocky pixel art star size
+    const PIXEL_SCALE = 3; // Star scale
+    const SPRITE_SCALE = 3; // Mario pixel block size (3px per sprite pixel = 48px tall)
+
+    // Classic 16x12 Authentic 8-Bit Mario Sprite Matrices
+    const MARIO_F1 = [
+      "....RRRRR...",
+      "...RRRRRRRRR",
+      "...DDDSSDS..",
+      "..DSDSSSDSSS",
+      "..DSDDSSDS..",
+      "..DDSSSSD...",
+      "....SSSSSS..",
+      "...RRBRR....",
+      "..RRRBRRR...",
+      ".RRRRBRRRR..",
+      ".SSBBYBBSS..",
+      ".SSBBBBBBSS.",
+      "...BBBBBB...",
+      "..DDD..DDD..",
+      ".DDD....DDD.",
+      "............"
+    ];
+
+    const MARIO_F2 = [
+      "....RRRRR...",
+      "...RRRRRRRRR",
+      "...DDDSSDS..",
+      "..DSDSSSDSSS",
+      "..DSDDSSDS..",
+      "..DDSSSSD...",
+      "....SSSSSS..",
+      "...RRBRR....",
+      "..RRRBRRR...",
+      ".RRRRBRRRR..",
+      ".SSBBYBBSS..",
+      ".SSBBBBBBSS.",
+      "...BBBBBB...",
+      "...DDD..DDD.",
+      "....DDD..DD.",
+      "............"
+    ];
+
+    const MARIO_F3 = [
+      "....RRRRR...",
+      "...RRRRRRRRR",
+      "...DDDSSDS..",
+      "..DSDSSSDSSS",
+      "..DSDDSSDS..",
+      "..DDSSSSD...",
+      "....SSSSSS..",
+      "...RRBRR....",
+      "..RRRBRRR...",
+      ".RRRRBRRRR..",
+      ".SSBBYBBSS..",
+      ".SSBBBBBBSS.",
+      "...BBBBBB...",
+      "..DDD....DDD",
+      ".DDD......DDD",
+      "............"
+    ];
+
+    const MARIO_JUMP = [
+      "....RRRRR...",
+      "...RRRRRRRRR",
+      "...DDDSSDS..",
+      "..DSDSSSDSSS",
+      "..DSDDSSDS..",
+      "..DDSSSSD...",
+      "....SSSSSS..",
+      "..SSRRBRRSS.",
+      ".SSRRRBRRRSS",
+      ".SSRRRBRRRSS",
+      "...BBBYBBB..",
+      "...BBBBBBB..",
+      "..BBBB.BBBB.",
+      ".DDD.....DDD",
+      ".DD.......DD",
+      "............"
+    ];
+
+    // Mario Runner State
+    const mario = {
+      x: -60,
+      y: 0,
+      groundY: 0,
+      vx: 3.2,
+      vy: 0,
+      gravity: 0.55,
+      isJumping: false,
+      frameTick: 0,
+      currentFrame: 0,
+      width: 12 * SPRITE_SCALE,
+      height: 16 * SPRITE_SCALE,
+    };
 
     function createStars() {
-      const count = Math.min(130, Math.floor((width * height) / 14000));
+      const count = Math.min(110, Math.floor((width * height) / 15000));
       stars = Array.from({ length: count }, () => ({
         x: Math.floor((Math.random() * width) / PIXEL_SCALE) * PIXEL_SCALE,
-        y: Math.floor((Math.random() * height) / PIXEL_SCALE) * PIXEL_SCALE,
-        size: Math.random() > 0.8 ? PIXEL_SCALE * 2 : PIXEL_SCALE,
+        y: Math.floor((Math.random() * (height - 80)) / PIXEL_SCALE) * PIXEL_SCALE,
+        size: Math.random() > 0.82 ? PIXEL_SCALE * 2 : PIXEL_SCALE,
         twinkleRate: Math.random() * 0.04 + 0.015,
         twinklePhase: Math.random() * Math.PI * 2,
         isGold: Math.random() > 0.65,
       }));
     }
 
+    function createClouds() {
+      clouds = [
+        { x: width * 0.15, y: 70, speed: 0.35, size: 4 },
+        { x: width * 0.55, y: 110, speed: 0.25, size: 5 },
+        { x: width * 0.88, y: 55, speed: 0.4, size: 3.5 },
+      ];
+    }
+
+    function createBlocks() {
+      mysteryBlocks = [];
+      const count = Math.max(2, Math.floor(width / 380));
+      for (let i = 0; i < count; i += 1) {
+        mysteryBlocks.push({
+          x: 220 + i * 360,
+          y: mario.groundY - 78,
+          w: 16 * SPRITE_SCALE,
+          h: 16 * SPRITE_SCALE,
+          bounceY: 0,
+          isHit: false,
+          animPhase: Math.random() * Math.PI,
+        });
+      }
+    }
+
     function spawnShootingPixel() {
       const startX = Math.random() * width * 0.7;
-      const startY = Math.random() * height * 0.4;
-      const speed = 4.5 + Math.random() * 3.5;
+      const startY = Math.random() * (height * 0.45);
+      const speed = 4.8 + Math.random() * 3.5;
       shootingPixels.push({
         x: startX,
         y: startY,
@@ -417,8 +537,16 @@
         vy: speed * 0.65,
         len: 8,
         life: 1.0,
-        decay: 0.025,
+        decay: 0.024,
       });
+    }
+
+    function triggerMarioJump() {
+      if (!mario.isJumping) {
+        mario.isJumping = true;
+        mario.vy = -12.5;
+        playBeep(480, 0.08, "square");
+      }
     }
 
     function resize() {
@@ -426,7 +554,97 @@
       height = window.innerHeight;
       canvas.width = width;
       canvas.height = height;
+
+      // Ground sits 22px from bottom of screen
+      mario.groundY = height - 24 - mario.height;
+      if (!mario.isJumping) {
+        mario.y = mario.groundY;
+      }
+
       createStars();
+      createClouds();
+      createBlocks();
+    }
+
+    // Draw an authentic 8-bit cloud with pixel blocks
+    function drawPixelCloud(cx, cy, s) {
+      ctx.fillStyle = "rgba(255, 255, 255, 0.18)";
+      const p = s;
+      // Cloud shape
+      ctx.fillRect(cx, cy, p * 8, p * 4);
+      ctx.fillRect(cx - p * 3, cy + p * 2, p * 14, p * 3);
+      ctx.fillRect(cx + p * 2, cy - p * 2, p * 5, p * 3);
+    }
+
+    // Draw 8-Bit Mario Sprite
+    function drawMarioSprite(x, y, isLight) {
+      let matrix = MARIO_F1;
+      if (mario.isJumping) {
+        matrix = MARIO_JUMP;
+      } else {
+        const runCycle = [MARIO_F1, MARIO_F2, MARIO_F3, MARIO_F2];
+        matrix = runCycle[mario.currentFrame % runCycle.length];
+      }
+
+      // Color palette mappings
+      const colorMap = {
+        R: isLight ? "#c92a2a" : "#e52521", // Classic Mario Red
+        B: isLight ? "#1864ab" : "#2b4cde", // Classic Overalls Blue
+        S: isLight ? "#e0a96d" : "#fcc082", // Peach / Skin Tone
+        D: isLight ? "#5c3d1e" : "#5c2c0e", // Hair / Boots
+        Y: "#fcc419",                       // Gold button
+      };
+
+      for (let r = 0; r < matrix.length; r += 1) {
+        const row = matrix[r];
+        for (let c = 0; c < row.length; c += 1) {
+          const char = row[c];
+          if (char !== "." && colorMap[char]) {
+            ctx.fillStyle = colorMap[char];
+            ctx.fillRect(
+              Math.floor(x + c * SPRITE_SCALE),
+              Math.floor(y + r * SPRITE_SCALE),
+              SPRITE_SCALE,
+              SPRITE_SCALE
+            );
+          }
+        }
+      }
+    }
+
+    // Draw [?] Mystery Block
+    function drawMysteryBlock(block, isLight) {
+      const bx = block.x;
+      const by = block.y + block.bounceY;
+      const bw = block.w;
+      const bh = block.h;
+
+      // Block body
+      ctx.fillStyle = block.isHit
+        ? (isLight ? "#9e8065" : "#634731")
+        : (isLight ? "#d48806" : "#e59b12");
+      ctx.fillRect(bx, by, bw, bh);
+
+      // Block pixel borders
+      ctx.strokeStyle = isLight ? "#5c3c12" : "#382006";
+      ctx.lineWidth = 3;
+      ctx.strokeRect(bx, by, bw, bh);
+
+      // 4 corner bolts
+      ctx.fillStyle = isLight ? "#ffd591" : "#ffe7ba";
+      ctx.fillRect(bx + 4, by + 4, 3, 3);
+      ctx.fillRect(bx + bw - 7, by + 4, 3, 3);
+      ctx.fillRect(bx + 4, by + bh - 7, 3, 3);
+      ctx.fillRect(bx + bw - 7, by + bh - 7, 3, 3);
+
+      // Animated '?' sign
+      if (!block.isHit) {
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 18px 'Press Start 2P', monospace";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("?", bx + bw / 2, by + bh / 2);
+      }
     }
 
     let time = 0;
@@ -436,12 +654,19 @@
 
       const isLight = document.documentElement.getAttribute("data-theme") === "light";
 
-      // Spawn shooting stars randomly
+      // 1. Draw Clouds
+      clouds.forEach((cl) => {
+        drawPixelCloud(cl.x, cl.y, cl.size);
+        cl.x += cl.speed;
+        if (cl.x > width + 80) cl.x = -80;
+      });
+
+      // 2. Spawn shooting stars
       if (Math.random() < 0.007) {
         spawnShootingPixel();
       }
 
-      // Draw pixel stars
+      // 3. Draw Stars
       stars.forEach((s) => {
         const alpha = 0.25 + Math.abs(Math.sin(time * s.twinkleRate + s.twinklePhase)) * 0.75;
         if (isLight) {
@@ -456,7 +681,7 @@
         ctx.fillRect(s.x, s.y, s.size, s.size);
       });
 
-      // Draw shooting pixel streaks
+      // 4. Draw Shooting Pixel Comets
       shootingPixels = shootingPixels.filter((sh) => sh.life > 0);
       shootingPixels.forEach((sh) => {
         for (let i = 0; i < sh.len; i += 1) {
@@ -481,8 +706,144 @@
         sh.life -= sh.decay;
       });
 
+      // 5. Draw 8-Bit Ground Terrain Along Bottom
+      const groundH = 24;
+      const groundY = height - groundH;
+
+      ctx.fillStyle = isLight ? "#d48806" : "#b8621b"; // Brick surface
+      ctx.fillRect(0, groundY, width, groundH);
+
+      ctx.fillStyle = isLight ? "#995a00" : "#743508"; // Brick mortar line
+      ctx.fillRect(0, groundY, width, 4);
+
+      // Checkered brick vertical notches
+      ctx.fillStyle = isLight ? "#7a4300" : "#4e2103";
+      for (let bx = 0; bx < width; bx += 32) {
+        ctx.fillRect(bx, groundY + 4, 3, groundH - 4);
+      }
+
+      // 6. Update & Draw Mystery [?] Blocks
+      mysteryBlocks.forEach((block) => {
+        // Smooth bounce return
+        if (block.bounceY < 0) {
+          block.bounceY += 1.2;
+          if (block.bounceY > 0) block.bounceY = 0;
+        }
+
+        drawMysteryBlock(block, isLight);
+
+        // Check Mario hit under block!
+        const marioMidX = mario.x + mario.width / 2;
+        if (
+          !block.isHit &&
+          mario.isJumping &&
+          mario.vy < 0 &&
+          marioMidX >= block.x - 10 &&
+          marioMidX <= block.x + block.w + 10 &&
+          Math.abs(mario.y - (block.y + block.h)) < 16
+        ) {
+          block.isHit = true;
+          block.bounceY = -9;
+          mario.vy = 2; // Bounce head down
+
+          // Spawn Golden Coin
+          activeCoins.push({
+            x: block.x + block.w / 2,
+            y: block.y - 10,
+            vy: -7.5,
+            life: 1.0,
+            rot: 0,
+          });
+
+          playBeep(987, 0.1, "square"); // Coin chime!
+        }
+      });
+
+      // 7. Update & Draw Flying Coins
+      activeCoins = activeCoins.filter((c) => c.life > 0);
+      activeCoins.forEach((c) => {
+        c.y += c.vy;
+        c.vy += 0.45; // gravity
+        c.rot += 0.25;
+        c.life -= 0.024;
+
+        ctx.save();
+        ctx.translate(c.x, c.y);
+        ctx.fillStyle = isLight ? "#faad14" : "#ffec3d";
+
+        // Pixel coin ellipse
+        const coinW = Math.max(3, Math.abs(Math.cos(c.rot)) * 12);
+        ctx.fillRect(-coinW / 2, -10, coinW, 20);
+
+        // "+100" Points popup
+        ctx.fillStyle = isLight ? "#b27300" : "#f6c445";
+        ctx.font = "bold 11px 'Press Start 2P', monospace";
+        ctx.textAlign = "center";
+        ctx.fillText("+100", 0, -18);
+
+        ctx.restore();
+      });
+
+      // 8. Update & Draw Mario Runner
+      mario.x += mario.vx;
+
+      // Running cycle tick
+      mario.frameTick += 1;
+      if (mario.frameTick % 7 === 0) {
+        mario.currentFrame += 1;
+      }
+
+      // Physics (Jumping / Gravity)
+      if (mario.isJumping) {
+        mario.y += mario.vy;
+        mario.vy += mario.gravity;
+
+        if (mario.y >= mario.groundY) {
+          mario.y = mario.groundY;
+          mario.isJumping = false;
+          mario.vy = 0;
+        }
+      } else {
+        mario.y = mario.groundY;
+
+        // Auto-jump to hit [?] blocks as Mario runs near them
+        mysteryBlocks.forEach((block) => {
+          if (!block.isHit && Math.abs(mario.x + mario.width / 2 - (block.x + block.w / 2)) < 30) {
+            triggerMarioJump();
+          }
+        });
+      }
+
+      // Loop Mario from right side back to left side
+      if (mario.x > width + 60) {
+        mario.x = -60;
+        // Reset blocks for next loop
+        mysteryBlocks.forEach((b) => {
+          b.isHit = false;
+          b.bounceY = 0;
+        });
+      }
+
+      // Render Mario
+      drawMarioSprite(mario.x, mario.y, isLight);
+
       animId = requestAnimationFrame(render);
     }
+
+    // Interactive jumps on user input!
+    window.addEventListener("click", (e) => {
+      // If not clicking a form control or button, Mario jumps!
+      if (!["INPUT", "TEXTAREA", "BUTTON", "A"].includes(e.target.tagName)) {
+        triggerMarioJump();
+      }
+    });
+
+    window.addEventListener("keydown", (e) => {
+      if (e.code === "Space" && !["INPUT", "TEXTAREA"].includes(document.activeElement?.tagName)) {
+        e.preventDefault();
+        triggerMarioJump();
+      }
+    });
 
     window.addEventListener("resize", resize);
     window.addEventListener("rpgthemechange", () => render());
